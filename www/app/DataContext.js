@@ -224,11 +224,6 @@ Conference.dataContext = (function ($) {
         // **ENTER CODE HERE** TO EXECUTE SQL AND DEAL WITH ANY ERRORS
         // ON SUCCESS YOU SHOULD CALL processorFunc PASSING THE LIST OF RESULT DATA
 
-        // db.transaction(function(tx) {
-        //   tx.executeSql("SELECT * FROM todo", [], renderFunc,
-        //       html5rocks.webdb.onError);
-        // });
-
         /*
          * CG - Added call to WebSQL 'executeSql' function in order to query the database and return the list
          * of available sessions ordered by start time.
