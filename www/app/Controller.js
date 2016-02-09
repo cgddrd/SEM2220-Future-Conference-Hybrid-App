@@ -11,6 +11,14 @@ Conference.controller = (function ($, dataContext, document) {
     var noSessionsCachedMsg = "<div>Your sessions list is empty.</div>";
     var databaseNotInitialisedMsg = "<div>Your browser does not support local databases.</div>";
 
+    /*
+     * CG - Fixed bug whereby variable 'sList' was undefined.
+     *
+     * This variable should be set to reference the function associated with rendering out the list of session
+     * results returned from the Web SQL database query in 'dataContext.querySessions'.
+     */
+    var sList = renderSessionsList;
+
     var TECHNICAL_SESSION = "Technical",
         SESSIONS_LIST_PAGE_ID = "sessions",
         MAP_PAGE = "map";
@@ -34,6 +42,7 @@ Conference.controller = (function ($, dataContext, document) {
         // with new dimensions
         switch (toPageId) {
             case SESSIONS_LIST_PAGE_ID:
+                //dataContext.processSessionsList(sList);
                 dataContext.processSessionsList(renderSessionsList);
                 break;
             case MAP_PAGE:
@@ -45,7 +54,15 @@ Conference.controller = (function ($, dataContext, document) {
         }
     };
 
-    var renderSessionsList = function (sessionsList) {
+
+    /*
+     * CG - Fixed bug to ensure definition for the WebSQL 'executeSql' callback function correctly matches the W3C specification
+     * as specified here: https://www.w3.org/TR/webdatabase/#executing-sql-statements
+     *
+     * This was a minor change to the orignal code, simply requiring an additional parameter to the added in order to represent
+     * both the SQLTransaction and SQLResultSet (i.e. the returned list of query results) objects.
+     */
+    var renderSessionsList = function (transactionData, sessionsList) {
         // This is where you do the work to build the HTML ul list
         // based on the data you've received from DataContext.js (it
         // calls this method with the list of data)
@@ -61,6 +78,8 @@ Conference.controller = (function ($, dataContext, document) {
         // would help.
         // o You will need to refresh JQM by calling listview function
         // **ENTER CODE HERE**
+
+        console.log(sessionsList);
 
     };
 
@@ -195,7 +214,7 @@ Conference.controller = (function ($, dataContext, document) {
         if (!databaseInitialised) {
             d.on('pagechange', $(document), noDataDisplay);
         }
-       
+
         // The pagechange event is fired every time we switch pages or display a page
         // for the first time.
         d.on('pagechange', $(document), onPageChange);
@@ -219,5 +238,3 @@ Conference.controller = (function ($, dataContext, document) {
 $(document).on('mobileinit', $(document), function () {
     Conference.controller.init();
 });
-
-

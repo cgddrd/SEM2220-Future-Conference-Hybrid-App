@@ -1,6 +1,7 @@
 ﻿var Conference = Conference || {};
 
 Conference.dataContext = (function ($) {
+
     "use strict";
 
     var db = null;
@@ -222,6 +223,23 @@ Conference.dataContext = (function ($) {
 
         // **ENTER CODE HERE** TO EXECUTE SQL AND DEAL WITH ANY ERRORS
         // ON SUCCESS YOU SHOULD CALL processorFunc PASSING THE LIST OF RESULT DATA
+
+        // db.transaction(function(tx) {
+        //   tx.executeSql("SELECT * FROM todo", [], renderFunc,
+        //       html5rocks.webdb.onError);
+        // });
+
+        /*
+         * CG - Added call to WebSQL 'executeSql' function in order to query the database and return the list
+         * of available sessions ordered by start time.
+         *
+         * Note the reference to the appropiate callback function 'processorFunc' that takes two parameters:
+         *
+         * -- 1) An `SQLTransaction' object providing details on the state of the database transation.
+         * -- 2) An `SQLResultSet' object containing a zero or more rows of query results and an integer describing the number of rows affected
+         *      (not applicable to SELECT statements).
+         */
+        tx.executeSql("SELECT * FROM sessions WHERE sessions.dayid = '1' ORDER BY sessions.starttime ASC", [], processorFunc, errorDB);
     }
 
     // Called by Controller.js onPageChange method
