@@ -11,6 +11,10 @@ Conference.controller = (function ($, dataContext, document) {
     var noSessionsCachedMsg = "<div>Your sessions list is empty.</div>";
     var databaseNotInitialisedMsg = "<div>Your browser does not support local databases.</div>";
 
+
+    var sessionItemTemplate = '<li><a href=""><div class="session-list-item"><h3>%title%</h3><div><h6>%type%</h6><h6>%start-time% to %end-time%</h6></div></div></li>';
+    var sessionsListViewSelector = '#sessions-list-view';
+
     /*
      * CG - Fixed bug whereby variable 'sList' was undefined.
      *
@@ -23,7 +27,7 @@ Conference.controller = (function ($, dataContext, document) {
         SESSIONS_LIST_PAGE_ID = "sessions",
         MAP_PAGE = "map";
 
-    // This changes the behaviour of the anchor <a> link
+    // This changes the behaviour of the anchor <a> link§
     // so that when we click an anchor link we change page without
     // updating the browser's history stack (changeHash: false).
     // We also don't want the usual page transition effect but
@@ -79,7 +83,54 @@ Conference.controller = (function ($, dataContext, document) {
         // o You will need to refresh JQM by calling listview function
         // **ENTER CODE HERE**
 
-        console.log(sessionsList);
+        //console.log(sessionsList);
+
+        var sessionListContainer = $(sessionsListSelector);
+
+        sessionListContainer.empty();
+
+        if (sessionsList.rows.length <= 0) {
+
+          $(noSessionsCachedMsg).appendTo(sessionListContainer);
+
+        } else {
+
+          var listArray = [];
+
+          // CG - Cache the termination value inside of the loop - more efficient.
+          for (var i = 0, len = sessionsList.rows.length; i < len; i++) {
+
+            var mapObj = {
+               '%title%': sessionsList.rows[i].title,
+               '%type%': sessionsList.rows[i].type,
+               '%start-time%': sessionsList.rows[i].starttime,
+               '%end-time%': sessionsList.rows[i].endtime
+            };
+
+            var compiledTemplate = sessionItemTemplate.replace(/%title%|%type%|%start-time%|%end-time%/gi, function(matched){
+              return mapObj[matched];
+            });
+
+            listArray.push(compiledTemplate);
+
+          }
+
+          var template = ["<ul data-role=\"listview\" id=\"sessions-list-view\">", listArray.join(''), '</ul>'].join('');
+
+          $(template).appendTo(sessionListContainer);
+
+          // CG - Check if the JQM listview object has already been initialised or not. If so, just refresh the exisiting list.
+          if ($(sessionsListViewSelector).hasClass('ui-listview')) {
+
+            $( sessionsListViewSelector ).listview('refresh');
+
+          } else {
+
+            $( sessionsListViewSelector ).listview();
+
+          }
+
+        }
 
     };
 
