@@ -14,6 +14,7 @@ Conference.controller = (function ($, dataContext, document) {
 
     var sessionItemTemplate = '<li><a href=""><div class="session-list-item"><h3>%title%</h3><div><h6>%type%</h6><h6>%start-time% to %end-time%</h6></div></div></li>';
     var sessionsListViewSelector = '#sessions-list-view';
+    var sessionListViewTemplate = '<form class="ui-filterable"><input id="myFilter" data-type="search" placeholder="Search for sessions.."></form><ul data-role="listview" id="sessions-list-view" data-filter="true" data-input="#myFilter">%session-list%</ul>';
 
     /*
      * CG - Fixed bug whereby variable 'sList' was undefined.
@@ -100,26 +101,43 @@ Conference.controller = (function ($, dataContext, document) {
           // CG - Cache the termination value inside of the loop - more efficient.
           for (var i = 0, len = sessionsList.rows.length; i < len; i++) {
 
-            var mapObj = {
-               '%title%': sessionsList.rows[i].title,
-               '%type%': sessionsList.rows[i].type,
-               '%start-time%': sessionsList.rows[i].starttime,
-               '%end-time%': sessionsList.rows[i].endtime
-            };
+            // var mapObj = {
+            //    '%title%': sessionsList.rows[i].title,
+            //    '%type%': sessionsList.rows[i].type,
+            //    '%start-time%': sessionsList.rows[i].starttime,
+            //    '%end-time%': sessionsList.rows[i].endtime
+            // };
 
-            var compiledTemplate = sessionItemTemplate.replace(/%title%|%type%|%start-time%|%end-time%/gi, function(matched){
-              return mapObj[matched];
-            });
+            // var compiledTemplate = sessionItemTemplate.replace(/%title%|%type%|%start-time%|%end-time%/gi, function(matched){
+            //   return mapObj[matched];
+            // });
+
+            var compiledTemplate = compileTemplate(sessionItemTemplate, ['%title%',
+                                                                         '%type%',
+                                                                         '%start-time%',
+                                                                         '%end-time%'
+                                                                         ],
+                                                                         [sessionsList.rows[i].title,
+                                                                          sessionsList.rows[i].type,
+                                                                          sessionsList.rows[i].starttime,
+                                                                          sessionsList.rows[i].endtime
+                                                                        ],
+                                                                        'gi');
 
             listArray.push(compiledTemplate);
 
           }
 
-          var template = ["<ul data-role=\"listview\" id=\"sessions-list-view\">", listArray.join(''), '</ul>'].join('');
+          //var template = ["<ul data-role=\"listview\" id=\"sessions-list-view\">", listArray.join(''), '</ul>'].join('');
+
+          var template = compileTemplate(sessionListViewTemplate, ['%session-list%'], [listArray.join('')], 'gi');
+
+          console.log(template);
 
           $(template).appendTo(sessionListContainer);
 
-          // CG - Check if the JQM listview object has already been initialised or not. If so, just refresh the exisiting list.
+          // CG - Check if the JQM listview object has already been initialised or not. If so, just refresh the existing list.
+          // See: http://stackoverflow.com/a/9493671 for more information.
           if ($(sessionsListViewSelector).hasClass('ui-listview')) {
 
             $( sessionsListViewSelector ).listview('refresh');
@@ -133,6 +151,30 @@ Conference.controller = (function ($, dataContext, document) {
         }
 
     };
+
+    var compileTemplate = function(targetString, findTerms, replaceTerms, regexFlags) {
+
+      if (findTerms.length !== replaceTerms.length) {
+        throw new Error("Number of supplied Regex search terms must match number of replacement terms.");
+      }
+
+      regexFlags = regexFlags || '';
+
+      var lookupTable = {};
+
+      for (var i = 0; i < findTerms.length; i++) {
+
+        lookupTable[findTerms[i]] = replaceTerms[i];
+
+      }
+
+      var regex = new RegExp(findTerms.length > 1 ? findTerms.join('|') : findTerms[0], regexFlags);
+
+      return targetString.replace(regex, function(matched){
+        return lookupTable[matched];
+      });
+
+    }
 
     var noDataDisplay = function (event, data) {
         var view = $(sessionsListSelector);
