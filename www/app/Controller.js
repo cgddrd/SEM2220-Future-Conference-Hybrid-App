@@ -7,14 +7,14 @@ Conference.controller = (function ($, dataContext, document) {
     var mapDisplayed = false;
     var currentMapWidth = 0;
     var currentMapHeight = 0;
-    var sessionsListSelector = "#sessions-list-content";
+
+    var sessionsListContainerSelector = "#sessions-list-content";
+    var sessionsListSelector = "#sessions-list-view";
+
     var noSessionsCachedMsg = "<div>Your sessions list is empty.</div>";
     var databaseNotInitialisedMsg = "<div>Your browser does not support local databases.</div>";
 
-
     var sessionItemTemplate = '<li><a href=""><div class="session-list-item"><h3>%title%</h3><div><h6>%type%</h6><h6>%start-time% to %end-time%</h6></div></div></li>';
-    var sessionsListViewSelector = '#sessions-list-view';
-    var sessionListViewTemplate = '<form class="ui-filterable"><input id="myFilter" data-type="search" placeholder="Search for sessions.."></form><ul data-role="listview" id="sessions-list-view" data-filter="true" data-input="#myFilter">%session-list%</ul>';
 
     /*
      * CG - Fixed bug whereby variable 'sList' was undefined.
@@ -38,6 +38,10 @@ Conference.controller = (function ($, dataContext, document) {
     };
 
     var onPageChange = function (event, data) {
+
+      console.log(event);
+      console.log(data);
+
         // Find the id of the page
         var toPageId = data.toPage.attr("id");
 
@@ -57,6 +61,9 @@ Conference.controller = (function ($, dataContext, document) {
                 }
                 break;
         }
+
+        return false;
+
     };
 
 
@@ -68,6 +75,7 @@ Conference.controller = (function ($, dataContext, document) {
      * both the SQLTransaction and SQLResultSet (i.e. the returned list of query results) objects.
      */
     var renderSessionsList = function (transactionData, sessionsList) {
+
         // This is where you do the work to build the HTML ul list
         // based on the data you've received from DataContext.js (it
         // calls this method with the list of data)
@@ -84,11 +92,12 @@ Conference.controller = (function ($, dataContext, document) {
         // o You will need to refresh JQM by calling listview function
         // **ENTER CODE HERE**
 
-        //console.log(sessionsList);
+        var sessionListContainer = $(sessionsListContainerSelector);
+        var sessionListView = $(sessionsListSelector);
 
-        var sessionListContainer = $(sessionsListSelector);
 
-        sessionListContainer.empty();
+
+        sessionListView.empty();
 
         if (sessionsList.rows.length <= 0) {
 
@@ -101,52 +110,30 @@ Conference.controller = (function ($, dataContext, document) {
           // CG - Cache the termination value inside of the loop - more efficient.
           for (var i = 0, len = sessionsList.rows.length; i < len; i++) {
 
-            // var mapObj = {
-            //    '%title%': sessionsList.rows[i].title,
-            //    '%type%': sessionsList.rows[i].type,
-            //    '%start-time%': sessionsList.rows[i].starttime,
-            //    '%end-time%': sessionsList.rows[i].endtime
-            // };
-
-            // var compiledTemplate = sessionItemTemplate.replace(/%title%|%type%|%start-time%|%end-time%/gi, function(matched){
-            //   return mapObj[matched];
-            // });
-
-            var compiledTemplate = compileTemplate(sessionItemTemplate, ['%title%',
-                                                                         '%type%',
-                                                                         '%start-time%',
-                                                                         '%end-time%'
-                                                                         ],
-                                                                         [sessionsList.rows[i].title,
-                                                                          sessionsList.rows[i].type,
-                                                                          sessionsList.rows[i].starttime,
-                                                                          sessionsList.rows[i].endtime
-                                                                        ],
+            var compiledTemplate = compileTemplate(sessionItemTemplate, ['%title%', '%type%', '%start-time%', '%end-time%'],
+                                                                        [sessionsList.rows[i].title, sessionsList.rows[i].type,
+                                                                         sessionsList.rows[i].starttime, sessionsList.rows[i].endtime],
                                                                         'gi');
 
             listArray.push(compiledTemplate);
 
           }
 
-          //var template = ["<ul data-role=\"listview\" id=\"sessions-list-view\">", listArray.join(''), '</ul>'].join('');
-
-          var template = compileTemplate(sessionListViewTemplate, ['%session-list%'], [listArray.join('')], 'gi');
-
-          console.log(template);
-
-          $(template).appendTo(sessionListContainer);
+          $(listArray.join('')).appendTo(sessionListView);
 
           // CG - Check if the JQM listview object has already been initialised or not. If so, just refresh the existing list.
           // See: http://stackoverflow.com/a/9493671 for more information.
-          if ($(sessionsListViewSelector).hasClass('ui-listview')) {
+          if ($(sessionListView).hasClass('ui-listview')) {
 
-            $( sessionsListViewSelector ).listview('refresh');
+            $(sessionListView).listview('refresh');
 
           } else {
 
-            $( sessionsListViewSelector ).listview();
+            $(sessionListView).listview();
 
           }
+
+          //$( "#myFilter" ).filterable().filterable('refresh');
 
         }
 
@@ -310,11 +297,21 @@ Conference.controller = (function ($, dataContext, document) {
 
         // The pagechange event is fired every time we switch pages or display a page
         // for the first time.
-        d.on('pagechange', $(document), onPageChange);
+
+        // CG - Issue with 'pagechange' - this appears to re-bind inside the exisiting 'pagechange' event handler for previously-loaded pages.
+        // Observed pattern: For each NEW page loaded for the first time, a new 'recursive' binding of 'pagechange' takes place.
+        //d.on('pagechange', $(document), onPageChange);
+
+        d.on('pagebeforeshow', $(document), onPageChange);
+
         // The pageinit event is fired when jQM loads a new page for the first time into the
         // Document Object Model (DOM). When this happens we want the initialisePage function
         // to be called.
-        d.on('pageinit', $(document), initialisePage);
+
+        // CG - Changed now-deprecated event 'pageinit' to new 'pagecreate' handler.
+        d.on('pagecreate', $(document), initialisePage);
+
+
     };
 
 

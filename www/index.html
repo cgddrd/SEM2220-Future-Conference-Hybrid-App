@@ -41,7 +41,7 @@
 
 <body>
 
-<article id="home_page" role="document" aria-live="assertive" aria-atomic="true" data-role="page">
+<div id="home_page" role="document" aria-live="assertive" aria-atomic="true" data-role="page">
 
     <header class="page_header" role="banner" data-role="header" data-theme="b" data-position="fixed">
         <div class="logo">
@@ -140,9 +140,9 @@
         </nav>
     </footer>
 
-</article>
+</div>
 
-<article id="sessions" role="document" aria-live="assertive" aria-atomic="true" data-role="page" data-title="Sessions">
+<div id="sessions" role="document" aria-live="assertive" aria-atomic="true" data-role="page" data-title="Sessions">
     <header class="page_header" role="banner" data-role="header" data-theme="b" data-position="fixed">
         <div class="logo">
             <img src="logo.jpg" alt="The conference home page logo"/>
@@ -164,6 +164,14 @@
 
     <section data-role="content" class="indexPos" id="sessions-list-content">
 
+      <form class="ui-filterable">
+         <input id="myFilter" data-type="search" placeholder="Search for sessions..">
+      </form>
+
+      <ul data-role="listview" id="sessions-list-view" data-filter="true" data-input="#myFilter">
+
+      </ul>
+
     </section>
 
     <footer data-role="footer" data-position="fixed" data-theme="b">
@@ -182,9 +190,9 @@
         </nav>
     </footer>
 
-</article>
+</div>
 
-<article id="map" role="document" aria-live="assertive" aria-atomic="true" data-role="page">
+<div id="map" role="document" aria-live="assertive" aria-atomic="true" data-role="page">
    <header id="maptitle" class="page_header" role="banner" data-role="header" data-theme="b" data-position="fixed">
         <header class="logo">
             <img src="logo.jpg" alt="The conference home page logo"/>
@@ -224,7 +232,7 @@
         </nav>
     </footer>
 
-</article>
+</div>
 
 </body>
 </html>
