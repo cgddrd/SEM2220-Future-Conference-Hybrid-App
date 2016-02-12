@@ -14,6 +14,10 @@ Conference.dataContext = (function ($) {
     // The current database version supported by this script
     var DATABASE_VERSION = "1.0";
 
+    // CG - These database versions have to be an integer.
+    var INDEXED_DB_OLD_DATABASE_VERSION = 0;
+    var INDEXED_DB_DATABASE_VERSION = 1;
+
     var populateDB = function (tx) {
 
         // There is much more here than we need for the assignment. We only need sessions and days
@@ -187,10 +191,58 @@ Conference.dataContext = (function ($) {
         // Check first that openDatabase is supported.
         // Note that if not supported natively and we are running on a mobile
         // then PhoneGap will provide the support.
-        if (typeof window.openDatabase === "undefined") {
-            return false;
+        // if (typeof window.openDatabase === "undefined") {
+        //     return false;
+        // }
+
+        if (!window.indexedDB) {
+          window.alert("Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available.");
+          return false;
         }
-        db = window.openDatabase(DATABASE_NAME, "", "Conference App", 200000);
+
+        // Let us open our database
+        var dbOpenRequest = window.indexedDB.open(DATABASE_NAME, INDEXED_DB_DATABASE_VERSION);
+
+        dbOpenRequest.onupgradeneeded = function(e) {
+
+            console.log("Upgrading...");
+
+            db = e.target.result;
+
+            // Create an objectStore for this database
+            var objectStore = db.createObjectStore("sessions", { keyPath: "_id" });
+
+            // CG - Setup the indexes for the 'sessions' object store.
+            objectStore.createIndex("title", "title", { unique: false });
+            objectStore.createIndex("type", "type", { unique: false });
+            objectStore.createIndex("dayId", "dayId", { unique: false });
+
+            // Use transaction oncomplete to make sure the objectStore creation is
+            // finished before adding data into it.
+            objectStore.transaction.oncomplete = function(event) {
+
+              // Store values in the newly created objectStore.
+              var sessionObjectStore = db.transaction("sessions", "readwrite").objectStore("sessions");
+
+              for (var i in customerData) {
+                sessionObjectStore.add(customerData[i]);
+              }
+
+            };
+
+        }
+
+        dbOpenRequest.onsuccess = function(e) {
+            console.log("Success!");
+            db = e.target.result;
+        }
+
+        dbOpenRequest.onerror = function(e) {
+            console.log("Error");
+            console.dir(e);
+        }
+
+        //db = window.openDatabase(DATABASE_NAME, "", "Conference App", 200000);
 
         // If the version is empty then we know it's the first create so set the version
         // and populate
