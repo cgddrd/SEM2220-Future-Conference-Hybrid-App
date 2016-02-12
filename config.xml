@@ -1,12 +1,30 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="uk.ac.aber.dcs.clg11.conference" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:gap="http://phonegap.com/ns/1.0">
-    <name>Future of Web Conference</name>
+
+<!-- CG - In order to add additional config options to the 'AndroidManifest.xml' file, we have to explicitly reference the Android XML namespace. -->
+<widget id="uk.ac.aber.dcs.clg11.conference"
+        version="1.0.0"
+        xmlns="http://www.w3.org/ns/widgets"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:gap="http://phonegap.com/ns/1.0">
+
+    <name>FoWC 2016</name>
+
     <description>
-        Hello World sample application that responds to the deviceready event.
+        SEM2220 - RWD Technical Assignment 2016
     </description>
-    <author email="support@phonegap.com" href="http://phonegap.com">
-        PhoneGap Team
+
+    <author email="clg11@aber.ac.uk" href="http://cgddrd.me">
+        Connor Goddard
     </author>
+
+    <!--
+      CG - Instruct Phonegap Build to compile the Android application as 'debuggable' to allow for remote debugging.
+      See: https://www.genuitec.com/products/gapdebug/learning-center/configuration/ for more information.
+    -->
+    <gap:config-file parent="/manifest" platform="android">
+        <application android:debuggable="true" />
+    </gap:config-file>
+
     <content src="index.html" />
     <preference name="permissions" value="none" />
     <preference name="orientation" value="portrait" />
@@ -23,6 +41,10 @@
     <preference name="disable-cursor" value="false" />
     <preference name="android-minSdkVersion" value="14" />
     <preference name="android-installLocation" value="auto" />
+
+    <!-- CG - Add notification support for 'alert' dialogs. -->
+    <plugin name="org.apache.cordova.dialogs" source="pgb" />
+
     <gap:plugin name="org.apache.cordova.battery-status" />
     <gap:plugin name="org.apache.cordova.camera" />
     <gap:plugin name="org.apache.cordova.media-capture" />
@@ -42,36 +64,11 @@
     <gap:plugin name="org.apache.cordova.splashscreen" />
     <gap:plugin name="org.apache.cordova.vibration" />
 
-    <!-- CG - Based on existing configuration settings provided by CWL. -->
     <icon src="icon.png" />
-    <icon src="www/icons/android/ldpi.png" gap:platform="android" gap:qualifier="ldpi" />
-    <icon src="www/icons/android/mdpi.png" gap:platform="android" gap:qualifier="mdpi" />
-    <icon src="www/icons/android/hdpi.png" gap:platform="android" gap:qualifier="hdpi" />
-    <icon src="www/icons/android/xhdpi.png" gap:platform="android" gap:qualifier="xhdpi" />
-
-    <!-- <icon gap:platform="blackberry" src="www/res/icon/blackberry/icon-80.png" />
-    <icon gap:platform="blackberry" gap:state="hover" src="www/res/icon/blackberry/icon-80.png" />
-    <icon gap:platform="ios" height="57" src="www/res/icon/ios/icon-57.png" width="57" />
-    <icon gap:platform="ios" height="72" src="www/res/icon/ios/icon-72.png" width="72" />
-    <icon gap:platform="ios" height="114" src="www/res/icon/ios/icon-57-2x.png" width="114" />
-    <icon gap:platform="ios" height="144" src="www/res/icon/ios/icon-72-2x.png" width="144" />
-    <icon gap:platform="webos" src="www/res/icon/webos/icon-64.png" />
-    <icon gap:platform="winphone" src="www/res/icon/windows-phone/icon-48.png" />
-    <icon gap:platform="winphone" gap:role="background" src="www/res/icon/windows-phone/icon-173-tile.png" /> -->
-
-    <!-- <gap:splash gap:platform="android" gap:qualifier="port-ldpi" src="www/res/screen/android/screen-ldpi-portrait.png" />
-    <gap:splash gap:platform="android" gap:qualifier="port-mdpi" src="www/res/screen/android/screen-mdpi-portrait.png" />
-    <gap:splash gap:platform="android" gap:qualifier="port-hdpi" src="www/res/screen/android/screen-hdpi-portrait.png" />
-    <gap:splash gap:platform="android" gap:qualifier="port-xhdpi" src="www/res/screen/android/screen-xhdpi-portrait.png" /> -->
-
-    <!-- <gap:splash gap:platform="blackberry" src="www/res/screen/blackberry/screen-225.png" />
-    <gap:splash gap:platform="ios" height="480" src="www/res/screen/ios/screen-iphone-portrait.png" width="320" />
-    <gap:splash gap:platform="ios" height="960" src="www/res/screen/ios/screen-iphone-portrait-2x.png" width="640" />
-    <gap:splash gap:platform="ios" height="1136" src="www/res/screen/ios/screen-iphone-portrait-568h-2x.png" width="640" />
-    <gap:splash gap:platform="ios" height="1024" src="www/res/screen/ios/screen-ipad-portrait.png" width="768" />
-    <gap:splash gap:platform="ios" height="768" src="www/res/screen/ios/screen-ipad-landscape.png" width="1024" />
-    <gap:splash gap:platform="winphone" src="www/res/screen/windows-phone/screen-portrait.jpg" /> -->
-
+    <icon gap:platform="android" gap:qualifier="ldpi" src="www/icons/android/ldpi.png" />
+    <icon gap:platform="android" gap:qualifier="mdpi" src="www/icons/android/mdpi.png" />
+    <icon gap:platform="android" gap:qualifier="hdpi" src="www/icons/android/hdpi.png" />
+    <icon gap:platform="android" gap:qualifier="xhdpi" src="www/icons/android/xhdpi.png" />
     <access origin="*" />
     <plugin name="cordova-plugin-whitelist" version="1" />
     <allow-intent href="http://*/*" />
