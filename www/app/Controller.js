@@ -51,7 +51,7 @@ Conference.controller = (function($, dataContext, document) {
       switch (toPageId) {
         case SESSIONS_LIST_PAGE_ID:
           //dataContext.processSessionsList(sList);
-          dataContext.processSessionsList(renderSessionsList);
+          dataContext.processSessionsList(renderIndexedDBSessionsList);
           break;
         case MAP_PAGE:
           if (!mapDisplayed || (currentMapWidth != get_map_width() ||
@@ -115,6 +115,67 @@ Conference.controller = (function($, dataContext, document) {
 
         var compiledTemplate = compileTemplate(sessionItemTemplate, ['%title%', '%type%', '%start-time%', '%end-time%'], [sessionsList.rows[i].title, sessionsList.rows[i].type,
             sessionsList.rows[i].starttime, sessionsList.rows[i].endtime
+          ],
+          'gi');
+
+        listArray.push(compiledTemplate);
+
+      }
+
+      $(listArray.join('')).appendTo(sessionListView);
+
+      // CG - Check if the JQM listview object has already been initialised or not. If so, just refresh the existing list.
+      // See: http://stackoverflow.com/a/9493671 for more information.
+      if ($(sessionListView).hasClass('ui-listview')) {
+
+        $(sessionListView).listview('refresh');
+
+      } else {
+
+        $(sessionListView).listview();
+
+      }
+
+    }
+
+  };
+
+  var renderIndexedDBSessionsList = function(sessionsList) {
+
+    // This is where you do the work to build the HTML ul list
+    // based on the data you've received from DataContext.js (it
+    // calls this method with the list of data)
+    // Here are some things you need to do:
+    // o Obtain a reference to #sessions-list-content element
+    // o If the sessionsList is empty append a div with an error message to the page
+    // o Create the <ul> element using jQuery commands and append to the sessions section
+    // o Loop through the sessionsList data building up an appropriate set of <li>
+    // elements. See how we do this in the worksheet version that hard-codes the
+    // session data in index.html
+    // o Append the list items to the <ul> element created earlier. Hint: building
+    // up an array and then converting to a string with join before appending
+    // would help.
+    // o You will need to refresh JQM by calling listview function
+    // **ENTER CODE HERE**
+
+    var sessionListContainer = $(sessionsListContainerSelector);
+    var sessionListView = $(sessionsListSelector);
+
+    sessionListView.empty();
+
+    if (sessionsList.length <= 0) {
+
+      $(noSessionsCachedMsg).appendTo(sessionListContainer);
+
+    } else {
+
+      var listArray = [];
+
+      // CG - Cache the termination value inside of the loop - more efficient.
+      for (var i = 0, len = sessionsList.length; i < len; i++) {
+
+        var compiledTemplate = compileTemplate(sessionItemTemplate, ['%title%', '%type%', '%start-time%', '%end-time%'], [sessionsList[i].title, sessionsList[i].type,
+            sessionsList[i].startTime, sessionsList[i].endTime
           ],
           'gi');
 
@@ -357,7 +418,7 @@ Conference.controller = (function($, dataContext, document) {
  * We check to see if the Phonegap 'notification' plugin is available, if so, display a native dialog
  * otherwise, fall back to the exisiting JS dialog provided by the web view.
  *
- * See: http://api.jquery.com/Types/#Proxy_Pattern for more information.
+ * See: http://api.jquery.com/Types/#Proxy_Pattern for more information
  */
 (function(proxied) {
   window.alert = function() {

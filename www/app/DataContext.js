@@ -4,6 +4,7 @@ Conference.dataContext = (function ($) {
 
     "use strict";
 
+    var useIndexedDB = true;
     var db = null;
     var processorFunc = null;
     var DATABASE_NAME = 'conference_db';
@@ -196,7 +197,7 @@ Conference.dataContext = (function ($) {
         // }
 
         if (!window.indexedDB) {
-          window.alert("Your browser doesn't support a stable version of IndexedDB. Such and such feature will not be available.");
+          alert("Your browser doesn't support a stable version of IndexedDB.");
           return false;
         }
 
@@ -205,30 +206,40 @@ Conference.dataContext = (function ($) {
 
         dbOpenRequest.onupgradeneeded = function(e) {
 
-            console.log("Upgrading...");
+            console.log("Creating/upgrading IndexedDB object store.");
 
             db = e.target.result;
 
-            // Create an objectStore for this database
-            var objectStore = db.createObjectStore("sessions", { keyPath: "_id" });
+            if (!db.objectStoreNames.contains("sessions")) {
 
-            // CG - Setup the indexes for the 'sessions' object store.
-            objectStore.createIndex("title", "title", { unique: false });
-            objectStore.createIndex("type", "type", { unique: false });
-            objectStore.createIndex("dayId", "dayId", { unique: false });
+              // Create an objectStore for this database
+              var objectStore = db.createObjectStore("sessions", { keyPath: "_id" });
 
-            // Use transaction oncomplete to make sure the objectStore creation is
-            // finished before adding data into it.
-            objectStore.transaction.oncomplete = function(event) {
+              // CG - Setup the indexes for the 'sessions' object store.
+              objectStore.createIndex("title", "title", { unique: false });
+              objectStore.createIndex("type", "type", { unique: false });
+              objectStore.createIndex("dayId", "dayId", { unique: false });
 
-              // Store values in the newly created objectStore.
-              var sessionObjectStore = db.transaction("sessions", "readwrite").objectStore("sessions");
+              // Use transaction oncomplete to make sure the objectStore creation is
+              // finished before adding data into it.
+              objectStore.transaction.oncomplete = function(event) {
 
-              for (var i in customerData) {
-                sessionObjectStore.add(customerData[i]);
-              }
+                $.getJSON( "data/data.json", function( data ) {
 
-            };
+                  // Store values in the newly created objectStore.
+                  var sessionObjectStore = db.transaction("sessions", "readwrite").objectStore("sessions");
+
+                  for (var i = 0; i < data.length; i++) {
+                      sessionObjectStore.add(data[i]);
+                  }
+
+                }).fail(function() {
+                    alert("Error: Unable to load session data from JSON source.");
+                });
+
+              };
+
+            }
 
         }
 
@@ -245,21 +256,21 @@ Conference.dataContext = (function ($) {
         //db = window.openDatabase(DATABASE_NAME, "", "Conference App", 200000);
 
         // If the version is empty then we know it's the first create so set the version
-        // and populate
-        if (db.version.length == 0) {
-            db.changeVersion("", DATABASE_VERSION);
-            db.transaction(populateDB, errorDB, successPopulate);
-        }
-        else if (db.version == OLD_DATABASE_VERSION) {
-            // We can upgrade but in this example we don't!
-            alert("upgrading database");
-        }
-        else if (db.version != DATABASE_VERSION) {
-            // Trouble. They have a version of the database we
-            // cannot upgrade from
-            alert("incompatible database version");
-            return false;
-        }
+        // // and populate
+        // if (db.version.length == 0) {
+        //     db.changeVersion("", DATABASE_VERSION);
+        //     db.transaction(populateDB, errorDB, successPopulate);
+        // }
+        // else if (db.version == OLD_DATABASE_VERSION) {
+        //     // We can upgrade but in this example we don't!
+        //     alert("upgrading database");
+        // }
+        // else if (db.version != DATABASE_VERSION) {
+        //     // Trouble. They have a version of the database we
+        //     // cannot upgrade from
+        //     alert("incompatible database version");
+        //     return false;
+        // }
 
         return true;
     }
@@ -289,17 +300,61 @@ Conference.dataContext = (function ($) {
         tx.executeSql("SELECT * FROM sessions WHERE sessions.dayid = '1' ORDER BY sessions.starttime ASC", [], processorFunc, errorDB);
     }
 
+    var getSessions = function(processorFuncCallback) {
+
+      var objectStore = db.transaction("sessions").objectStore("sessions");
+      var index = objectStore.index("dayId");
+
+      var singleKeyRange = IDBKeyRange.only(1);
+
+      var sessionResults = [];
+
+      index.openCursor(singleKeyRange).onsuccess = function(event) {
+
+        var cursor = event.target.result;
+        if (cursor) {
+          // cursor.key is a name, like "Bill", and cursor.value is the whole object.
+          //alert(cursor.key + ", Title: " + cursor.value.title + ", email: " + cursor.value.type);
+          sessionResults.push(cursor.value);
+          cursor.continue();
+
+        } else {
+
+          console.log(sessionResults);
+
+          if (typeof processorFuncCallback === "function") {
+            processorFuncCallback(sessionResults);
+          }
+
+        }
+
+      };
+
+    }
+
     // Called by Controller.js onPageChange method
     var processSessionsList = function (processor) {
+
         processorFunc = processor;
-        if (db) {
-            db.transaction(querySessions, errorDB);
-        }
+
+         if (useIndexedDB) {
+           getSessions(processorFunc);
+         } else {
+           if (db) {
+               db.transaction(querySessions, errorDB);
+           }
+         }
+
     };
+
+    var setUseIndexedDB = function(useIndexedDB) {
+      this.useIndexedDB = useIndexedDB;
+    }
 
     // The methods we're publishing to other JS files
     var pub = {
         init:init,
+        useIndexedDB:useIndexedDB,
         processSessionsList:processSessionsList  // Called by Controller.js
     };
 
