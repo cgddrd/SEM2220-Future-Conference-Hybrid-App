@@ -277,15 +277,13 @@ Conference.dataContext = (function ($) {
 
     var init = function () {
 
-
-
         var test = {
           'sessions': {
             'key': '_id',
             'indexes': {
               'title': false,
               'type': false,
-              'dayId': false
+              'dayId': false,
             }
           },
           'test_objstore': {
@@ -294,7 +292,22 @@ Conference.dataContext = (function ($) {
         }
 
 
-        Conference.indexedDB.init("conference_db", 1, test, null, null);
+        Conference.indexedDB.init("conference_db", 1, test, function(db) {
+
+          $.getJSON( "data/data.json", function( data ) {
+
+            Conference.indexedDB.insertInto('sessions', data, function() {
+
+              console.log("DATA ADDED!");
+
+            }, null);
+
+
+          }).fail(function() {
+            alert("Error: Unable to load session data from JSON source.");
+          });
+
+        }, null);
 
 
       //  return initialise_database();
@@ -322,35 +335,64 @@ Conference.dataContext = (function ($) {
         tx.executeSql("SELECT * FROM sessions WHERE sessions.dayid = '1' ORDER BY sessions.starttime ASC", [], processorFunc, errorDB);
     }
 
+
+
     var getSessions = function(processorFuncCallback) {
 
-      var objectStore = db.transaction("sessions").objectStore("sessions");
-      var index = objectStore.index("dayId");
+      // var objectStore = db.transaction("sessions").objectStore("sessions");
+      // var index = objectStore.index("dayId");
+      //
+      // var singleKeyRange = IDBKeyRange.only(1);
+      //
+      // var sessionResults = [];
+      //
+      // index.openCursor(singleKeyRange).onsuccess = function(event) {
+      //
+      //   var cursor = event.target.result;
+      //   if (cursor) {
+      //     // cursor.key is a name, like "Bill", and cursor.value is the whole object.
+      //     //alert(cursor.key + ", Title: " + cursor.value.title + ", email: " + cursor.value.type);
+      //     sessionResults.push(cursor.value);
+      //     cursor.continue();
+      //
+      //   } else {
+      //
+      //     console.log(sessionResults);
+      //
+      //     if (typeof processorFuncCallback === "function") {
+      //       processorFuncCallback(sessionResults);
+      //     }
+      //
+      //   }
+      //
+      // };
 
-      var singleKeyRange = IDBKeyRange.only(1);
+      var query = {
 
-      var sessionResults = [];
+        'sessions': {
+          'index': 'dayId',
+          'equals': 1
+        }
+        // 'sessions': {
+        //   'index': 'title, name',
+        //   'equals': 'test title, connor',
+        //   'lowerBound': 'lower',
+        //   'upperBound': 'upper'
+        // }
 
-      index.openCursor(singleKeyRange).onsuccess = function(event) {
+      }
 
-        var cursor = event.target.result;
-        if (cursor) {
-          // cursor.key is a name, like "Bill", and cursor.value is the whole object.
-          //alert(cursor.key + ", Title: " + cursor.value.title + ", email: " + cursor.value.type);
-          sessionResults.push(cursor.value);
-          cursor.continue();
+      Conference.indexedDB.selectQuery(query, function(results) {
 
-        } else {
-
-          console.log(sessionResults);
-
-          if (typeof processorFuncCallback === "function") {
-            processorFuncCallback(sessionResults);
-          }
-
+        if (typeof processorFuncCallback === "function") {
+          processorFuncCallback(results);
         }
 
-      };
+      }, function(evt) {
+
+        console.log(evt);
+
+      });
 
     }
 

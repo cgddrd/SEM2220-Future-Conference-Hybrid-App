@@ -38,7 +38,12 @@ Conference.indexedDB = (function ($) {
           dbOpenRequest.onsuccess = function(evt) {
 
             db = evt.target.result;
-          //  successCallback(db);
+
+            console.warn("success");
+
+            if (successCallback) {
+              successCallback(db);
+            }
 
           };
 
@@ -47,8 +52,6 @@ Conference.indexedDB = (function ($) {
         }
 
         function createDatabase(dbSchema) {
-
-          console.log(dbSchema);
 
           for (currentObjectStoreName in dbSchema) {
 
@@ -74,7 +77,11 @@ Conference.indexedDB = (function ($) {
 
                     for (currentIndexName in currentObjectStoreIndexSettings) {
 
-                      objectStore.createIndex(currentIndexName, currentIndexName, { unique: currentObjectStoreIndexSettings[currentIndexName] });
+                      // CG - If we have a compund keypath (i.e. multiple properties) then split the keypath on the commas into an array and remove any trailing whitespace,
+                      // otherwise, just use the index name.
+                      var indexKeyPath = (currentIndexName.indexOf(",") > -1 ) ? currentIndexName.replace(/^\s+|\s+$/g,"").split(/\s*,\s*/) : currentIndexName;
+
+                      objectStore.createIndex(currentIndexName, indexKeyPath, { unique: currentObjectStoreIndexSettings[currentIndexName] });
 
                     }
 
@@ -83,49 +90,128 @@ Conference.indexedDB = (function ($) {
 
                 }
 
-
-
-
             }
 
           }
 
+        }
 
+        function insertInto(objectStoreName, data, successCallback, failureCallback) {
 
+            var insertTransaction = db.transaction([objectStoreName], "readwrite");
+            var objectStore = insertTransaction.objectStore(objectStoreName);
+            var insertRequest = null;
 
-        //  createCallback(db, objectStore);
+            insertTransaction.onerror = failureCallback;
 
-          // // CG - Setup the indexes for the 'sessions' object store.
-          // objectStore.createIndex("title", "title", { unique: false });
-          // objectStore.createIndex("type", "type", { unique: false });
-          // objectStore.createIndex("dayId", "dayId", { unique: false });
-          //
-          // // Use transaction oncomplete to make sure the objectStore creation is
-          // // finished before adding data into it.
-          // objectStore.transaction.oncomplete = function(event) {
-          //
-          //   $.getJSON( "data/data.json", function( data ) {
-          //
-          //     // Store values in the newly created objectStore.
-          //     var sessionObjectStore = db.transaction("sessions", "readwrite").objectStore("sessions");
-          //
-          //     for (var i = 0; i < data.length; i++) {
-          //         sessionObjectStore.add(data[i]);
-          //     }
-          //
-          //   }).fail(function() {
-          //       alert("Error: Unable to load session data from JSON source.");
-          //   });
-          //
-          // };
+            if (!isArray(data)) {
+
+              insertRequest = objectStore.add(data);
+              insertRequest.onerror = failureCallback;
+              insertRequest.onsuccess = successCallback;
+
+            } else {
+
+              for (var i = 0, len = data.length; i < len; i++) {
+                insertRequest = objectStore.add(data[i]);
+                insertRequest.onerror = failureCallback;
+              }
+
+            }
+
+            // CG - When we are done adding all of the data, call the successCallback.
+            successCallback();
 
         }
 
-        // Reveal public pointers to
-        // private functions and properties
+        function selectQuery(query, successCallback, failureCallback) {
+
+            for (targetObjectStoreName in query) {
+
+              if(query.hasOwnProperty(targetObjectStoreName)) {
+
+                var querySettings = query[targetObjectStoreName];
+
+                var queryTransaction = db.transaction([targetObjectStoreName], "readonly");
+                var objectStore = queryTransaction.objectStore(targetObjectStoreName);
+
+                queryTransaction.onerror = failureCallback;
+
+                var index = objectStore.index(querySettings['index']);
+
+                var cursorRequest = null;
+                var boundKeyRange = null;
+                var sortDirection = "next";
+                var queryResults = [];
+
+                if (querySettings['equals']) {
+
+                  console.log(querySettings['equals']);
+
+                  boundKeyRange = IDBKeyRange.only(querySettings['equals']);
+
+                } else if (querySettings['lowerBound'] && querySettings['upperBound']) {
+
+                  boundKeyRange = IDBKeyRange.bound(querySettings['lowerBound'], querySettings['upperBound']);
+
+                } else if (querySettings['lowerBound']) {
+
+                  boundKeyRange = IDBKeyRange.lowerBound(querySettings['lowerBound']);
+
+                } else if (querySettings['upperBound']) {
+
+                  boundKeyRange = IDBKeyRange.upperBound(querySettings['upperBound']);
+
+                }
+
+                if (querySettings['sort'] && (querySettings['sort'].toLowerCase() === 'desc' || querySettings['sort'].toLowerCase() === 'prev')) {
+
+                  sortDirection = 'prev';
+
+                }
+
+                cursorRequest = index.openCursor(boundKeyRange, sortDirection)
+
+                cursorRequest.onsuccess = function(event) {
+
+                  var cursor = event.target.result;
+
+                  if (cursor) {
+
+                    // cursor.key is a name, like "Bill", and cursor.value is the whole object.
+                    queryResults.push(cursor.value);
+                    cursor.continue();
+
+                  } else {
+
+                    successCallback(queryResults);
+
+                  }
+
+                };
+
+                cursorRequest.onerror = failureCallback;
+
+              }
+
+              // CG - SANITY CHECK: We can only query one object store per call, therefore we ignore any other queries apart from whatever the first one is (no guarantee of order).
+              break;
+
+            }
+
+        }
+
+        // CG - Modified from original source: http://www.shamasis.net/2011/08/infinite-ways-to-detect-array-in-javascript/
+        function isArray(checkObj) {
+
+          return Object.prototype.toString.call(checkObj) === "[object Array]";
+
+        }
 
         return {
-            init: init
+            init: init,
+            insertInto: insertInto,
+            selectQuery: selectQuery
         };
 
     })(jQuery);
