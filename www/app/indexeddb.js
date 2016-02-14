@@ -9,8 +9,6 @@ Conference.indexedDB = (function ($) {
 
         function init(dbName, dbVersion, dbSchema, successCallback, failureCallback) {
 
-          console.log("connor init");
-
           if (!window.indexedDB) {
             alert("Your browser doesn't support a stable version of IndexedDB.");
             return false;
@@ -86,14 +84,9 @@ Conference.indexedDB = (function ($) {
                     }
 
                   }
-
-
                 }
-
             }
-
           }
-
         }
 
         function insertInto(objectStoreName, data, successCallback, failureCallback) {

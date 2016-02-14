@@ -253,25 +253,6 @@ Conference.dataContext = (function ($) {
             console.dir(e);
         }
 
-        //db = window.openDatabase(DATABASE_NAME, "", "Conference App", 200000);
-
-        // If the version is empty then we know it's the first create so set the version
-        // // and populate
-        // if (db.version.length == 0) {
-        //     db.changeVersion("", DATABASE_VERSION);
-        //     db.transaction(populateDB, errorDB, successPopulate);
-        // }
-        // else if (db.version == OLD_DATABASE_VERSION) {
-        //     // We can upgrade but in this example we don't!
-        //     alert("upgrading database");
-        // }
-        // else if (db.version != DATABASE_VERSION) {
-        //     // Trouble. They have a version of the database we
-        //     // cannot upgrade from
-        //     alert("incompatible database version");
-        //     return false;
-        // }
-
         return true;
     }
 
@@ -283,7 +264,7 @@ Conference.dataContext = (function ($) {
             'indexes': {
               'title': false,
               'type': false,
-              'dayId': false,
+              'dayId': false
             }
           },
           'test_objstore': {
@@ -291,21 +272,61 @@ Conference.dataContext = (function ($) {
           }
         }
 
+        var webSQLSchema = {
+          'sessions': {
+            'columns': {
+              '_id': {
+                'type': 'integer',
+                'primaryKey': true,
+                'autoIncrement': true
+              },
+              'title': {
+                'type': 'text',
+                'allowNulls': true,
+                'autoIncrement': false
+              },
+              'startTime': 'text',
+              'endTime': 'text',
+              'type': 'text',
+              'dayId': {
+                'type': 'integer',
+                'allowNulls': true
+              },
+            }
+          }
+        }
 
-        Conference.indexedDB.init("conference_db", 1, test, function(db) {
+        // Conference.indexedDB.init("conference_db", 1, test, function(db) {
+        //
+        //   $.getJSON( "data/data.json", function( data ) {
+        //
+        //     Conference.indexedDB.insertInto('sessions', data, function() {
+        //
+        //       console.log("DATA ADDED!");
+        //
+        //     }, null);
+        //
+        //
+        //   }).fail(function() {
+        //     alert("Error: Unable to load session data from JSON source.");
+        //   });
+        //
+        // }, null);
 
-          $.getJSON( "data/data.json", function( data ) {
+        Conference.websql.init("conference_db", 0, 1, webSQLSchema, function(db) {
 
-            Conference.indexedDB.insertInto('sessions', data, function() {
-
-              console.log("DATA ADDED!");
-
-            }, null);
-
-
-          }).fail(function() {
-            alert("Error: Unable to load session data from JSON source.");
-          });
+          // $.getJSON( "data/data.json", function( data ) {
+          //
+          //   Conference.indexedDB.insertInto('sessions', data, function() {
+          //
+          //     console.log("DATA ADDED!");
+          //
+          //   }, null);
+          //
+          //
+          // }).fail(function() {
+          //   alert("Error: Unable to load session data from JSON source.");
+          // });
 
         }, null);
 
@@ -339,34 +360,6 @@ Conference.dataContext = (function ($) {
 
     var getSessions = function(processorFuncCallback) {
 
-      // var objectStore = db.transaction("sessions").objectStore("sessions");
-      // var index = objectStore.index("dayId");
-      //
-      // var singleKeyRange = IDBKeyRange.only(1);
-      //
-      // var sessionResults = [];
-      //
-      // index.openCursor(singleKeyRange).onsuccess = function(event) {
-      //
-      //   var cursor = event.target.result;
-      //   if (cursor) {
-      //     // cursor.key is a name, like "Bill", and cursor.value is the whole object.
-      //     //alert(cursor.key + ", Title: " + cursor.value.title + ", email: " + cursor.value.type);
-      //     sessionResults.push(cursor.value);
-      //     cursor.continue();
-      //
-      //   } else {
-      //
-      //     console.log(sessionResults);
-      //
-      //     if (typeof processorFuncCallback === "function") {
-      //       processorFuncCallback(sessionResults);
-      //     }
-      //
-      //   }
-      //
-      // };
-
       var query = {
 
         'sessions': {
@@ -390,7 +383,7 @@ Conference.dataContext = (function ($) {
 
       }, function(evt) {
 
-        console.log(evt);
+        alert('Query error whilst parsing IndexedDB object store - ' + evt);
 
       });
 
