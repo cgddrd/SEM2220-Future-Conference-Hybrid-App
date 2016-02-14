@@ -276,7 +276,29 @@ Conference.dataContext = (function ($) {
     }
 
     var init = function () {
-        return initialise_database();
+
+
+
+        var test = {
+          'sessions': {
+            'key': '_id',
+            'indexes': {
+              'title': false,
+              'type': false,
+              'dayId': false
+            }
+          },
+          'test_objstore': {
+            'key': 'auto'
+          }
+        }
+
+
+        Conference.indexedDB.init("conference_db", 1, test, null, null);
+
+
+      //  return initialise_database();
+
     };
 
 
