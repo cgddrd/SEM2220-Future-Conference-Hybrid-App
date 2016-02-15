@@ -39,7 +39,7 @@ Conference.controller = (function($, dataContext, document) {
 
   var onPageChange = function(event, data) {
 
-    try {
+    //try {
 
       // Find the id of the page
       var toPageId = data.toPage.attr("id");
@@ -51,6 +51,7 @@ Conference.controller = (function($, dataContext, document) {
       switch (toPageId) {
         case SESSIONS_LIST_PAGE_ID:
           //dataContext.processSessionsList(sList);
+          //dataContext.processSessionsList(renderIndexedDBSessionsList);
           dataContext.processSessionsList(renderSessionsList);
           break;
         case MAP_PAGE:
@@ -61,11 +62,11 @@ Conference.controller = (function($, dataContext, document) {
           break;
       }
 
-    } catch (error) {
-
-      alert("Unable to change page - " + error.message);
-
-    }
+    // } catch (error) {
+    //
+    //   alert("Unable to change page - " + error.message);
+    //
+    // }
 
     return false;
 
@@ -79,7 +80,7 @@ Conference.controller = (function($, dataContext, document) {
    * This was a minor change to the orignal code, simply requiring an additional parameter to the added in order to represent
    * both the SQLTransaction and SQLResultSet (i.e. the returned list of query results) objects.
    */
-  var renderSessionsList = function(transactionData, sessionsList) {
+  var renderSessionsList = function(sessionsList) {
 
     // This is where you do the work to build the HTML ul list
     // based on the data you've received from DataContext.js (it
@@ -102,7 +103,7 @@ Conference.controller = (function($, dataContext, document) {
 
     sessionListView.empty();
 
-    if (sessionsList.rows.length <= 0) {
+    if (sessionsList.length <= 0) {
 
       $(noSessionsCachedMsg).appendTo(sessionListContainer);
 
@@ -111,12 +112,12 @@ Conference.controller = (function($, dataContext, document) {
       var listArray = [];
 
       // CG - Cache the termination value inside of the loop - more efficient.
-      for (var i = 0, len = sessionsList.rows.length; i < len; i++) {
+      for (var i = 0, len = sessionsList.length; i < len; i++) {
 
-        var compiledTemplate = compileTemplate(sessionItemTemplate, ['%title%', '%type%', '%start-time%', '%end-time%'], [sessionsList.rows[i].title, sessionsList.rows[i].type,
-            sessionsList.rows[i].starttime, sessionsList.rows[i].endtime
-          ],
-          'gi');
+        var compiledTemplate = compileTemplate(sessionItemTemplate, ['%title%', '%type%', '%start-time%', '%end-time%'],
+                                                                    [sessionsList[i].title, sessionsList[i].type,
+                                                                     sessionsList[i].startTime, sessionsList[i].endTime],
+                                                                    'gi');
 
         listArray.push(compiledTemplate);
 
@@ -357,7 +358,7 @@ Conference.controller = (function($, dataContext, document) {
  * We check to see if the Phonegap 'notification' plugin is available, if so, display a native dialog
  * otherwise, fall back to the exisiting JS dialog provided by the web view.
  *
- * See: http://api.jquery.com/Types/#Proxy_Pattern for more information.
+ * See: http://api.jquery.com/Types/#Proxy_Pattern for more information
  */
 (function(proxied) {
   window.alert = function() {
