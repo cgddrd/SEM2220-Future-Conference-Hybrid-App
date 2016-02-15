@@ -37,8 +37,6 @@ Conference.indexedDB = (function($) {
 
       db = evt.target.result;
 
-      console.warn("success");
-
       if (successCallback) {
         successCallback(db);
       }
@@ -144,8 +142,6 @@ Conference.indexedDB = (function($) {
         var queryResults = [];
 
         if (querySettings['equals']) {
-
-          console.log(querySettings['equals']);
 
           boundKeyRange = IDBKeyRange.only(querySettings['equals']);
 

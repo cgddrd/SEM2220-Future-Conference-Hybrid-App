@@ -7,7 +7,7 @@ Conference.dataContext = (function ($) {
     var useIndexedDB = false;
     var db = null;
     var processorFunc = null;
-    
+
     var DATABASE_NAME = 'conference_db';
 
     // Use OLD_DATABASE_VERSION when upgrading databases. It indicates
@@ -71,10 +71,9 @@ Conference.dataContext = (function ($) {
 
               Conference.indexedDB.insertInto('sessions', data, function() {
 
-                console.log("DATA ADDED!");
+                console.info("Added data for IndexedDB.");
 
               }, null);
-
 
             }).fail(function() {
               alert("Error: Unable to load session data from JSON source.");
@@ -90,7 +89,7 @@ Conference.dataContext = (function ($) {
 
               Conference.websql.insertInto('sessions', data, function() {
 
-                console.log("DATA ADDED!");
+                console.info("Added data for WebSQL.");
 
               }, null);
 

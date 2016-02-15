@@ -24,7 +24,7 @@ Conference.websql = (function($) {
 
       queryTransaction.executeSql(query, values, successCallback, failureCallback);
 
-    });
+    }, successCallback, failureCallback);
 
   }
 
@@ -201,8 +201,6 @@ Conference.websql = (function($) {
         var selectSQLQuery = selectSQLTemplate.replace('%selectColumns%', selectColumns)
                                               .replace('%table%', tableName)
                                               .replace('%criteriaQuery%', criteriaQuery);
-
-                                          console.log(selectSQLQuery);
 
         // CG - TODO: Really we want to be using a parameterised SQL query. Need to figure this out.
         // Although, it's worth pointing out that we shouldn't be storing any sensitive information on the client machine anyway?

@@ -1,7 +1,7 @@
 var Conference = Conference || {};
 
 Conference.controller = (function($, dataContext, document) {
-  
+
   "use strict";
 
   var position = null;
@@ -40,7 +40,7 @@ Conference.controller = (function($, dataContext, document) {
 
   var onPageChange = function(event, data) {
 
-    //try {
+    try {
 
       // Find the id of the page
       var toPageId = data.toPage.attr("id");
@@ -51,10 +51,11 @@ Conference.controller = (function($, dataContext, document) {
       // with new dimensions
       switch (toPageId) {
         case SESSIONS_LIST_PAGE_ID:
-          //dataContext.processSessionsList(sList);
-          //dataContext.processSessionsList(renderIndexedDBSessionsList);
+
+          // CG - Use of the common wrapper between WebSQL and IndexedDB allows us to render the results in the same way regardless.
           dataContext.processSessionsList(renderSessionsList);
           break;
+          
         case MAP_PAGE:
           if (!mapDisplayed || (currentMapWidth != get_map_width() ||
               currentMapHeight != get_map_height())) {
@@ -63,11 +64,11 @@ Conference.controller = (function($, dataContext, document) {
           break;
       }
 
-    // } catch (error) {
-    //
-    //   alert("Unable to change page - " + error.message);
-    //
-    // }
+    } catch (error) {
+
+      alert("Error whilst changing view: " + error.message);
+
+    }
 
     return false;
 
