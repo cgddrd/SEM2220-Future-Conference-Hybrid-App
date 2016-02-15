@@ -4,7 +4,7 @@ Conference.dataContext = (function ($) {
 
     "use strict";
 
-    var useIndexedDB = true;
+    var useIndexedDB = false;
     var db = null;
     var processorFunc = null;
     var DATABASE_NAME = 'conference_db';
@@ -297,48 +297,49 @@ Conference.dataContext = (function ($) {
           }
         }
 
-        // Conference.indexedDB.init("conference_db", 1, test, function(db) {
-        //
-        //   $.getJSON( "data/data.json", function( data ) {
-        //
-        //     Conference.indexedDB.insertInto('sessions', data, function() {
-        //
-        //       console.log("DATA ADDED!");
-        //
-        //     }, null);
-        //
-        //
-        //   }).fail(function() {
-        //     alert("Error: Unable to load session data from JSON source.");
-        //   });
-        //
-        // }, null);
+        if (useIndexedDB) {
 
-        Conference.websql.init("conference_db", 0, 1, webSQLSchema, function(db) {
+          Conference.indexedDB.init("conference_db", 1, test, function(db) {
 
-          $.getJSON( "data/data.json", function( data ) {
+            $.getJSON( "data/data.json", function( data ) {
 
-            Conference.websql.insertInto('sessions', data, function() {
+              Conference.indexedDB.insertInto('sessions', data, function() {
 
-              console.log("DATA ADDED!");
+                console.log("DATA ADDED!");
 
-            }, null);
+              }, null);
 
 
-          }).fail(function() {
-            alert("Error: Unable to load session data from JSON source.");
+            }).fail(function() {
+              alert("Error: Unable to load session data from JSON source.");
+            });
+
+          }, null);
+
+        } else {
+
+          Conference.websql.init("conference_db", 0, 1, webSQLSchema, function(db) {
+
+            $.getJSON( "data/data.json", function( data ) {
+
+              Conference.websql.insertInto('sessions', data, function() {
+
+                console.log("DATA ADDED!");
+
+              }, null);
+
+
+            }).fail(function() {
+              alert("Error: Unable to load session data from JSON source.");
+            });
+
+          }, function(queryTransaction, transactionError) {
+
+            alert("Error occured whilst creating WebSQL database: " + transactionError.message);
+
           });
 
-          console.info('its done');
-
-        }, function(queryTransaction, transactionError) {
-
-          alert("Error occured whilst creating WebSQL database: " + transactionError.message);
-
-        });
-
-
-      //  return initialise_database();
+        }
 
     };
 
@@ -363,16 +364,30 @@ Conference.dataContext = (function ($) {
         tx.executeSql("SELECT * FROM sessions WHERE sessions.dayid = '1' ORDER BY sessions.starttime ASC", [], processorFunc, errorDB);
     }
 
-
-
     var getSessions = function(processorFuncCallback) {
 
-      var query = {
+      var indexedDBQuery = {
 
         'sessions': {
           'index': 'dayId',
           'equals': 1
         }
+
+      }
+
+      var webSQLQuery = {
+
+        // 'sessions': {
+        //   'index': 'dayId',
+        //   'equals': 1
+        // }
+        //
+        // 'sessions': {
+        //   '$and': {
+        //     'dayId': 1,
+        //     'title': 'hello'
+        //   }
+        // }
         // 'sessions': {
         //   'index': 'title, name',
         //   'equals': 'test title, connor',
@@ -380,19 +395,45 @@ Conference.dataContext = (function ($) {
         //   'upperBound': 'upper'
         // }
 
-      }
+        'sessions': {
 
-      Conference.indexedDB.selectQuery(query, function(results) {
+          'criteria': 'dayId = 1',
+          'columns': '*'
 
-        if (typeof processorFuncCallback === "function") {
-          processorFuncCallback(results);
         }
 
-      }, function(evt) {
+      }
 
-        alert('Query error whilst parsing IndexedDB object store - ' + evt);
+      if (useIndexedDB) {
 
-      });
+        Conference.indexedDB.selectQuery(indexedDBQuery, function(results) {
+
+          if (typeof processorFuncCallback === "function") {
+            processorFuncCallback(results);
+          }
+
+        }, function(evt, error) {
+
+          alert('Query error whilst parsing WebSQL DB: ' + error.message);
+
+        });
+
+
+      } else {
+
+        Conference.websql.selectQuery(webSQLQuery, function(results) {
+
+          if (typeof processorFuncCallback === "function") {
+            processorFuncCallback(results);
+          }
+
+        }, function(evt, error) {
+
+          alert('Query error whilst parsing WebSQL DB: ' + error.message);
+
+        });
+
+      }
 
     }
 
@@ -401,24 +442,14 @@ Conference.dataContext = (function ($) {
 
         processorFunc = processor;
 
-         if (useIndexedDB) {
-           getSessions(processorFunc);
-         } else {
-           if (db) {
-               db.transaction(querySessions, errorDB);
-           }
-         }
+        getSessions(processorFunc);
+
 
     };
-
-    var setUseIndexedDB = function(useIndexedDB) {
-      this.useIndexedDB = useIndexedDB;
-    }
 
     // The methods we're publishing to other JS files
     var pub = {
         init:init,
-        useIndexedDB:useIndexedDB,
         processSessionsList:processSessionsList  // Called by Controller.js
     };
 

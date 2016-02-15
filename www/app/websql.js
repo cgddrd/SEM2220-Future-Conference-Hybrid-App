@@ -10,15 +10,7 @@ Conference.websql = (function($) {
 
   function performQuery(query, successCallback, failureCallback) {
 
-    if (!db) {
-      failureCallback(null, new Error("Unable to perform SQL query: no connection to database."));
-    }
-
-    db.transaction(function(queryTransaction) {
-
-      queryTransaction.executeSql(query, [], successCallback, failureCallback);
-
-    });
+    performParameterisedQuery(query, [], successCallback, failureCallback);
 
   }
 
@@ -48,7 +40,8 @@ Conference.websql = (function($) {
     this.dbVersion = dbVersion;
 
     // CG - We deliberatly set an empty value for the version so that it defaults to 0, and therefore we know to populate it on creation.
-    db = window.openDatabase(dbName, "", "", 200000);
+    // We also by default set the database size to be the maximum value without requiring additional user permission (5 MB)
+    db = window.openDatabase(dbName, "", "", 5 * 1024 * 1024);
 
     // If the version is empty then we know it's the first create so set the version
     // // and populate
@@ -171,8 +164,6 @@ Conference.websql = (function($) {
                                       .replace('%columns%', columns.join(','))
                                       .replace('%sqlParams%', sqlParams.join(','));
 
-      console.log(queryString);
-
       performParameterisedQuery(queryString, values, successCallback, failureCallback);
 
     }
@@ -181,79 +172,58 @@ Conference.websql = (function($) {
 
   function selectQuery(query, successCallback, failureCallback) {
 
+    var selectSQLTemplate = "SELECT %selectColumns% FROM %table% %criteriaQuery%;";
+    var criteriaQuerySQLTemplate = "WHERE %criteria%"
+
     for (targetObjectStoreName in query) {
 
       if (query.hasOwnProperty(targetObjectStoreName)) {
 
+        var tableName = targetObjectStoreName;
         var querySettings = query[targetObjectStoreName];
 
-        var queryTransaction = db.transaction([targetObjectStoreName], "readonly");
-        var objectStore = queryTransaction.objectStore(targetObjectStoreName);
+        // CG - Set the default to return all columns from a table for the given query.
+        var selectColumns = "*";
+        var criteriaQuery  = "";
 
-        queryTransaction.onerror = failureCallback;
+        if (querySettings['columns']) {
+          selectColumns = querySettings['columns'];
+        }
 
-        var index = objectStore.index(querySettings['index']);
+        if (querySettings['criteria']) {
 
-        var cursorRequest = null;
-        var boundKeyRange = null;
-        var sortDirection = "next";
-        var queryResults = [];
-
-        if (querySettings['equals']) {
-
-          console.log(querySettings['equals']);
-
-          boundKeyRange = IDBKeyRange.only(querySettings['equals']);
-
-        } else if (querySettings['lowerBound'] && querySettings['upperBound']) {
-
-          boundKeyRange = IDBKeyRange.bound(querySettings['lowerBound'], querySettings['upperBound']);
-
-        } else if (querySettings['lowerBound']) {
-
-          boundKeyRange = IDBKeyRange.lowerBound(querySettings['lowerBound']);
-
-        } else if (querySettings['upperBound']) {
-
-          boundKeyRange = IDBKeyRange.upperBound(querySettings['upperBound']);
+          criteriaQuery = criteriaQuerySQLTemplate.replace('%criteria%',
+                                                          sanitiseSQLQueryInput(querySettings['criteria']));
 
         }
 
-        if (querySettings['sort'] && (querySettings['sort'].toLowerCase() === 'desc' || querySettings['sort'].toLowerCase() === 'prev')) {
 
-          sortDirection = 'prev';
+        var selectSQLQuery = selectSQLTemplate.replace('%selectColumns%', selectColumns)
+                                              .replace('%table%', tableName)
+                                              .replace('%criteriaQuery%', criteriaQuery);
 
-        }
+                                          console.log(selectSQLQuery);
 
-        cursorRequest = index.openCursor(boundKeyRange, sortDirection)
+        // CG - TODO: Really we want to be using a parameterised SQL query. Need to figure this out.
+        // Although, it's worth pointing out that we shouldn't be storing any sensitive information on the client machine anyway?
+        performQuery(selectSQLQuery, function(tx, result) {
 
-        cursorRequest.onsuccess = function(event) {
+          successCallback(result.rows);
 
-          var cursor = event.target.result;
-
-          if (cursor) {
-
-            // cursor.key is a name, like "Bill", and cursor.value is the whole object.
-            queryResults.push(cursor.value);
-            cursor.continue();
-
-          } else {
-
-            successCallback(queryResults);
-
-          }
-
-        };
-
-        cursorRequest.onerror = failureCallback;
+        }, failureCallback);
 
       }
 
-      // CG - SANITY CHECK: We can only query one object store per call, therefore we ignore any other queries apart from whatever the first one is (no guarantee of order).
+      // CG - SANITY CHECK: We can only query one object store per call.
+      // Therefore we ignore any other queries apart from whatever the first one is (no guarantee of order).
       break;
 
     }
 
+  }
+
+  function sanitiseSQLQueryInput(originalInput) {
+    return originalInput.replace(/([^a-z0-9*=<>()\s]+)/gi, '');
   }
 
   function isString(checkStr) {
