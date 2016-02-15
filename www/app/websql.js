@@ -1,244 +1,278 @@
 var Conference = Conference || {};
 
-Conference.websql = (function ($) {
+Conference.websql = (function($) {
 
-        var db = null,
-            dbName = '',
-            dbOldVersion = '0',
-            dbVersion = -1;
+  var db = null,
+    dbName = '',
+    dbOldVersion = '0',
+    dbVersion = -1,
+    createSQLTemplate = "CREATE TABLE %table% (%columns%)";
 
-        // CG - TODO: NEED TO CHANGE THIS TO BE AN OBJECT! (E.G. TO PASS IN SIZE, OLD AND NEW VERSION NUMBERS ETC..)
-        function init(dbName, dbOldVersion, dbVersion, dbSchema, successCallback, failureCallback) {
+  function performQuery(query, successCallback, failureCallback) {
 
-          if (typeof window.openDatabase === "undefined") {
-              alert("Your browser doesn't support a stable version of WebSQL.");
-              return false;
-          }
+    if (!db) {
+      failureCallback(null, new Error("Unable to perform SQL query: no connection to database."));
+    }
 
-          this.dbName = dbName;
-          this.dbVersion = dbVersion;
+    db.transaction(function(queryTransaction) {
 
-          // CG - We deliberatly set an empty value for the version so that it defaults to 0, and therefore we know to populate it on creation.
-          db = window.openDatabase(dbName, "", "", 200000);
+      queryTransaction.executeSql(query, [], successCallback, failureCallback);
 
-          // If the version is empty then we know it's the first create so set the version
-          // // and populate
-          if (db.version.length == 0) {
-              db.changeVersion("", dbVersion);
-              createDatabase(dbSchema);
-          } else if (db.version == dbOldVersion) {
-              // We can upgrade but in this example we don't!
-              alert("upgrading database");
-          } else if (db.version != dbVersion) {
-              // Trouble. They have a version of the database we
-              // cannot upgrade from
-              alert("incompatible database version");
-              return false;
-          }
+    });
 
-        }
+  }
 
-        function createDatabase(dbSchema) {
+  function performParameterisedQuery(query, values, successCallback, failureCallback) {
 
-          var createTemplate = "CREATE TABLE %table% (%columns%);";
+    if (!db) {
+      failureCallback(null, new Error("Unable to perform SQL query: no connection to database."));
+    }
 
-          console.log(dbSchema);
+    db.transaction(function(queryTransaction) {
 
-          for (currentObjectStoreName in dbSchema) {
+      queryTransaction.executeSql(query, values, successCallback, failureCallback);
 
-            if(dbSchema.hasOwnProperty(currentObjectStoreName)) {
+    });
 
-                var currentObjectStoreSettings = dbSchema[currentObjectStoreName];
-                var currentObjectStoreColumnSettings = currentObjectStoreSettings['columns'];
-                var columns = [];
-                var createString = "";
+  }
 
-                if (currentObjectStoreSettings && currentObjectStoreColumnSettings) {
+  // CG - TODO: NEED TO CHANGE THIS TO BE AN OBJECT! (E.G. TO PASS IN SIZE, OLD AND NEW VERSION NUMBERS ETC..)
+  function init(dbName, dbOldVersion, dbVersion, dbSchema, successCallback, failureCallback) {
 
-                  for (currentColumnName in currentObjectStoreColumnSettings) {
+    if (typeof window.openDatabase === "undefined") {
+      alert("Your browser doesn't support a stable version of WebSQL.");
+      return false;
+    }
 
-                    var columnString = currentColumnName;
+    this.dbName = dbName;
+    this.dbVersion = dbVersion;
 
-                    if (isString(currentObjectStoreSettings[currentColumnName])) {
+    // CG - We deliberatly set an empty value for the version so that it defaults to 0, and therefore we know to populate it on creation.
+    db = window.openDatabase(dbName, "", "", 200000);
 
-                      columnString.concat(currentObjectStoreSettings[currentColumnName]);
+    // If the version is empty then we know it's the first create so set the version
+    // // and populate
+    if (db.version.length == 0) {
+      db.changeVersion("", dbVersion);
+      createDatabase(dbSchema, successCallback, failureCallback);
+    } else if (db.version == dbOldVersion) {
+      // We can upgrade but in this example we don't!
+      alert("upgrading database");
+    } else if (db.version != dbVersion) {
+      // Trouble. They have a version of the database we
+      // cannot upgrade from
+      alert("incompatible database version");
+      return false;
+    }
 
-                    } else {
 
-                      var currentIndividualColumnSettings = currentObjectStoreColumnSettings[currentColumnName];
+  }
 
-                      console.log(currentIndividualColumnSettings);
+  function prepareCreateStatement(dbSchema) {
 
-                      if (currentIndividualColumnSettings['type']) {
+    for (currentObjectStoreName in dbSchema) {
 
-                        columnString = columnString.concat(" " + currentIndividualColumnSettings['type'].toUpperCase());
+      if (dbSchema.hasOwnProperty(currentObjectStoreName)) {
 
-                      }
+        var currentObjectStoreSettings = dbSchema[currentObjectStoreName];
+        var currentObjectStoreColumnSettings = currentObjectStoreSettings['columns'];
+        var columns = [];
+        var createString = "";
 
-                      if (currentIndividualColumnSettings['primaryKey']) {
+        if (currentObjectStoreSettings && currentObjectStoreColumnSettings) {
 
-                        //console.log("primary key");
+          for (currentColumnName in currentObjectStoreColumnSettings) {
 
-                        columnString = columnString.concat(" PRIMARY KEY");
+            var columnCreateString = currentColumnName;
 
-                      }
+            if (isString(currentObjectStoreColumnSettings[currentColumnName])) {
 
-                      if (currentIndividualColumnSettings['autoIncrement']) {
+              columnCreateString = columnCreateString.concat(" " + currentObjectStoreColumnSettings[currentColumnName].toUpperCase());
 
-                        columnString = columnString.concat(" AUTOINCREMENT");
+            } else {
 
-                      }
+              var currentIndividualColumnSettings = currentObjectStoreColumnSettings[currentColumnName];
 
-                      if (!currentIndividualColumnSettings['allowNulls']) {
+              if (currentIndividualColumnSettings['type']) {
 
-                        columnString = columnString.concat(" NOT NULL");
-
-                      }
-
-                    }
-
-                    columns.push(columnString);
-
-                  }
-
-                  createString = createTemplate.replace('%table%', currentObjectStoreName).replace('%columns%', columns.join(','));
-
-                  console.log(createString);
-                }
-
-            }
-
-          }
-
-        }
-
-        function insertInto(objectStoreName, data, successCallback, failureCallback) {
-
-            db.transaction(function(insertTransaction) {
-
-              var insertTemplate = "INSERT INTO %table% (%columns%);";
-
-              for (var i = 0, len = data.length; i < len; i++) {
-
-                var currentObject = data[i];
-
-                var columns = [], values = [];
-
-                for (property in currentObject) {
-
-                  if(query.hasOwnProperty(property)) {
-
-                    columns.push(property);
-                    values.push(currentObject[property]);
-
-                  }
-
-                }
-
-                var res = insertTemplate.replace('%columns%', columns.join(',').replace('%values%', values.join(',')));
-
-                console.log(res);
+                columnCreateString = columnCreateString.concat(" " + currentIndividualColumnSettings['type'].toUpperCase());
 
               }
 
-            }, failureCallback, successCallback);
+              if (currentIndividualColumnSettings['primaryKey']) {
 
-        }
-
-        function selectQuery(query, successCallback, failureCallback) {
-
-            for (targetObjectStoreName in query) {
-
-              if(query.hasOwnProperty(targetObjectStoreName)) {
-
-                var querySettings = query[targetObjectStoreName];
-
-                var queryTransaction = db.transaction([targetObjectStoreName], "readonly");
-                var objectStore = queryTransaction.objectStore(targetObjectStoreName);
-
-                queryTransaction.onerror = failureCallback;
-
-                var index = objectStore.index(querySettings['index']);
-
-                var cursorRequest = null;
-                var boundKeyRange = null;
-                var sortDirection = "next";
-                var queryResults = [];
-
-                if (querySettings['equals']) {
-
-                  console.log(querySettings['equals']);
-
-                  boundKeyRange = IDBKeyRange.only(querySettings['equals']);
-
-                } else if (querySettings['lowerBound'] && querySettings['upperBound']) {
-
-                  boundKeyRange = IDBKeyRange.bound(querySettings['lowerBound'], querySettings['upperBound']);
-
-                } else if (querySettings['lowerBound']) {
-
-                  boundKeyRange = IDBKeyRange.lowerBound(querySettings['lowerBound']);
-
-                } else if (querySettings['upperBound']) {
-
-                  boundKeyRange = IDBKeyRange.upperBound(querySettings['upperBound']);
-
-                }
-
-                if (querySettings['sort'] && (querySettings['sort'].toLowerCase() === 'desc' || querySettings['sort'].toLowerCase() === 'prev')) {
-
-                  sortDirection = 'prev';
-
-                }
-
-                cursorRequest = index.openCursor(boundKeyRange, sortDirection)
-
-                cursorRequest.onsuccess = function(event) {
-
-                  var cursor = event.target.result;
-
-                  if (cursor) {
-
-                    // cursor.key is a name, like "Bill", and cursor.value is the whole object.
-                    queryResults.push(cursor.value);
-                    cursor.continue();
-
-                  } else {
-
-                    successCallback(queryResults);
-
-                  }
-
-                };
-
-                cursorRequest.onerror = failureCallback;
+                columnCreateString = columnCreateString.concat(" PRIMARY KEY");
 
               }
 
-              // CG - SANITY CHECK: We can only query one object store per call, therefore we ignore any other queries apart from whatever the first one is (no guarantee of order).
-              break;
+              if (currentIndividualColumnSettings['autoIncrement']) {
+
+                columnCreateString = columnCreateString.concat(" AUTOINCREMENT");
+
+              }
+
+              if (!currentIndividualColumnSettings['allowNulls']) {
+
+                columnCreateString = columnCreateString.concat(" NOT NULL");
+
+              }
 
             }
 
+            columns.push(columnCreateString);
+
+          }
+        }
+      }
+    }
+
+    return createSQLTemplate.replace('%table%', currentObjectStoreName)
+      .replace('%columns%', columns.join(', '));
+
+
+  }
+
+  function createDatabase(dbSchema, successCallback, failureCallback) {
+
+    var createQueryString = prepareCreateStatement(dbSchema);
+
+    performQuery(createQueryString, successCallback, failureCallback);
+
+  }
+
+
+  function insertInto(objectStoreName, data, successCallback, failureCallback) {
+
+    var insertTemplate = "INSERT INTO %table% (%columns%) VALUES (%sqlParams%);";
+
+    for (var i = 0, len = data.length; i < len; i++) {
+
+      var currentObject = data[i];
+
+      var columns = [],
+        values = [],
+        sqlParams = [];
+
+      for (property in currentObject) {
+
+        if (currentObject.hasOwnProperty(property)) {
+
+          columns.push(property);
+          values.push(currentObject[property]);
+
+          // CG - Could use string concatenation here, but then we have to remove the last question mark.
+          sqlParams.push('?');
+
         }
 
-        function isString(checkStr) {
+      }
 
-          return checkStr instanceof String || typeof checkStr === "string";
+      var queryString = insertTemplate.replace('%table%', objectStoreName)
+                                      .replace('%columns%', columns.join(','))
+                                      .replace('%sqlParams%', sqlParams.join(','));
+
+      console.log(queryString);
+
+      performParameterisedQuery(queryString, values, successCallback, failureCallback);
+
+    }
+
+  }
+
+  function selectQuery(query, successCallback, failureCallback) {
+
+    for (targetObjectStoreName in query) {
+
+      if (query.hasOwnProperty(targetObjectStoreName)) {
+
+        var querySettings = query[targetObjectStoreName];
+
+        var queryTransaction = db.transaction([targetObjectStoreName], "readonly");
+        var objectStore = queryTransaction.objectStore(targetObjectStoreName);
+
+        queryTransaction.onerror = failureCallback;
+
+        var index = objectStore.index(querySettings['index']);
+
+        var cursorRequest = null;
+        var boundKeyRange = null;
+        var sortDirection = "next";
+        var queryResults = [];
+
+        if (querySettings['equals']) {
+
+          console.log(querySettings['equals']);
+
+          boundKeyRange = IDBKeyRange.only(querySettings['equals']);
+
+        } else if (querySettings['lowerBound'] && querySettings['upperBound']) {
+
+          boundKeyRange = IDBKeyRange.bound(querySettings['lowerBound'], querySettings['upperBound']);
+
+        } else if (querySettings['lowerBound']) {
+
+          boundKeyRange = IDBKeyRange.lowerBound(querySettings['lowerBound']);
+
+        } else if (querySettings['upperBound']) {
+
+          boundKeyRange = IDBKeyRange.upperBound(querySettings['upperBound']);
 
         }
 
-        // CG - Modified from original source: http://www.shamasis.net/2011/08/infinite-ways-to-detect-array-in-javascript/
-        function isArray(checkObj) {
+        if (querySettings['sort'] && (querySettings['sort'].toLowerCase() === 'desc' || querySettings['sort'].toLowerCase() === 'prev')) {
 
-          return Object.prototype.toString.call(checkObj) === "[object Array]";
+          sortDirection = 'prev';
 
         }
 
-        return {
-            init: init,
-            insertInto: insertInto,
-            selectQuery: selectQuery
+        cursorRequest = index.openCursor(boundKeyRange, sortDirection)
+
+        cursorRequest.onsuccess = function(event) {
+
+          var cursor = event.target.result;
+
+          if (cursor) {
+
+            // cursor.key is a name, like "Bill", and cursor.value is the whole object.
+            queryResults.push(cursor.value);
+            cursor.continue();
+
+          } else {
+
+            successCallback(queryResults);
+
+          }
+
         };
 
-    })(jQuery);
+        cursorRequest.onerror = failureCallback;
+
+      }
+
+      // CG - SANITY CHECK: We can only query one object store per call, therefore we ignore any other queries apart from whatever the first one is (no guarantee of order).
+      break;
+
+    }
+
+  }
+
+  function isString(checkStr) {
+
+    return checkStr instanceof String || typeof checkStr === "string";
+
+  }
+
+  // CG - Modified from original source: http://www.shamasis.net/2011/08/infinite-ways-to-detect-array-in-javascript/
+  function isArray(checkObj) {
+
+    return Object.prototype.toString.call(checkObj) === "[object Array]";
+
+  }
+
+  return {
+    init: init,
+    insertInto: insertInto,
+    selectQuery: selectQuery
+  };
+
+})(jQuery);

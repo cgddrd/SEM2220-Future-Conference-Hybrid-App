@@ -27,6 +27,9 @@ Conference.dataContext = (function ($) {
         tx.executeSql('CREATE TABLE talks (_id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, speaker TEXT, image TEXT, description TEXT, notes TEXT, eventid INTEGER NOT NULL)', [], createSuccess, errorDB);
         tx.executeSql('CREATE TABLE venues (_id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, latitude TEXT, longitude TEXT)', [], createSuccess, errorDB);
         tx.executeSql('CREATE TABLE sessions (_id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, starttime TEXT, endtime TEXT, type TEXT, dayid INTEGER NOT NULL)', [], createSuccess, errorDB);
+
+      //  CREATE TABLE sessions (_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, title TEXT NOT NULL, startTime TEXT, endTime TEXT, type TEXT, dayId INTEGER NOT NULL)
+
         tx.executeSql('CREATE TABLE events (_id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, venueid INTEGER NOT NULL, sessionid INTEGER NOT NULL)', [], createSuccess, errorDB);
 
         tx.executeSql('insert into days (_id, day, date) values (1,	\'Wednesday\', \'8th Sept\')', [], insertSuccess, errorDB);
@@ -282,15 +285,13 @@ Conference.dataContext = (function ($) {
               },
               'title': {
                 'type': 'text',
-                'allowNulls': true,
                 'autoIncrement': false
               },
               'startTime': 'text',
               'endTime': 'text',
               'type': 'text',
               'dayId': {
-                'type': 'integer',
-                'allowNulls': true
+                'type': 'integer'
               },
             }
           }
@@ -315,20 +316,26 @@ Conference.dataContext = (function ($) {
 
         Conference.websql.init("conference_db", 0, 1, webSQLSchema, function(db) {
 
-          // $.getJSON( "data/data.json", function( data ) {
-          //
-          //   Conference.indexedDB.insertInto('sessions', data, function() {
-          //
-          //     console.log("DATA ADDED!");
-          //
-          //   }, null);
-          //
-          //
-          // }).fail(function() {
-          //   alert("Error: Unable to load session data from JSON source.");
-          // });
+          $.getJSON( "data/data.json", function( data ) {
 
-        }, null);
+            Conference.websql.insertInto('sessions', data, function() {
+
+              console.log("DATA ADDED!");
+
+            }, null);
+
+
+          }).fail(function() {
+            alert("Error: Unable to load session data from JSON source.");
+          });
+
+          console.info('its done');
+
+        }, function(queryTransaction, transactionError) {
+
+          alert("Error occured whilst creating WebSQL database: " + transactionError.message);
+
+        });
 
 
       //  return initialise_database();
