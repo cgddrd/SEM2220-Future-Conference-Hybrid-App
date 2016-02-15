@@ -1,6 +1,7 @@
 var Conference = Conference || {};
 
 Conference.controller = (function($, dataContext, document) {
+  
   "use strict";
 
   var position = null;
