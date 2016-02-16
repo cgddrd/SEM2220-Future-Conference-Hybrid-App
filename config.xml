@@ -12,18 +12,18 @@
         <application android:debuggable="true" />
     </gap:config-file>
 
-    <gap:config-file parent="/manifest/application" platform="android">
+    <!-- <gap:config-file parent="/manifest/application" platform="android">
       <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyCZAE4ivS6WPvUUb95P_nUu7QGSE-jJ1Q0"/>
     </gap:config-file>
 
     <gap:plugin name="cordova-plugin-googlemaps" source="npm">
      <param name="API_KEY_FOR_ANDROID" value="AIzaSyCZAE4ivS6WPvUUb95P_nUu7QGSE-jJ1Q0" />
      <param name="API_KEY_FOR_IOS" value="123" />
-   </gap:plugin>
+   </gap:plugin> -->
 
     <content src="index.html" />
 
-    <preference name="android-build-tool" value="gradle" />
+    <!-- <preference name="android-build-tool" value="gradle" /> -->
 
     <preference name="permissions" value="none" />
     <preference name="orientation" value="portrait" />
@@ -59,14 +59,15 @@
     <gap:plugin name="org.apache.cordova.network-information" />
     <gap:plugin name="org.apache.cordova.splashscreen" />
     <gap:plugin name="org.apache.cordova.vibration" />
+    <plugin name="cordova-plugin-whitelist" version="1" />
+
     <icon src="icon.png" />
     <icon gap:platform="android" gap:qualifier="ldpi" src="www/icons/android/ldpi.png" />
     <icon gap:platform="android" gap:qualifier="mdpi" src="www/icons/android/mdpi.png" />
     <icon gap:platform="android" gap:qualifier="hdpi" src="www/icons/android/hdpi.png" />
     <icon gap:platform="android" gap:qualifier="xhdpi" src="www/icons/android/xhdpi.png" />
-    <access origin="*" />
 
-    <plugin name="cordova-plugin-whitelist" version="1" />
+    <access origin="*" />
 
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
@@ -75,21 +76,21 @@
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
 
-    <allow-navigation href="*" />
+    <!-- <allow-navigation href="*" />
     <allow-intent href="*" />
-    <access origin="*" />
+    <access origin="*" /> -->
 
-    <access origin="https://googleapis.com" subdomains="true"/>
+    <!-- <access origin="https://googleapis.com" subdomains="true"/>
     <access origin="http://google.com" subdomains="true"/>
     <access origin="http://gstatic.com" subdomains="true"/>
     <access origin="https://google.com" subdomains="true"/>
     <access origin="https://gstatic.com" subdomains="true"/>
     <access origin="*.google.com"/>
-    <access origin="*.googleapis.com"/>
+    <access origin="*.googleapis.com"/> -->
 
     <platform name="android">
         <allow-intent href="market:*" />
-        <preference name="android-targetSdkVersion" value="22" />
+        <!-- <preference name="android-targetSdkVersion" value="22" /> -->
     </platform>
     <platform name="ios">
         <allow-intent href="itms:*" />

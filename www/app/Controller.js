@@ -55,7 +55,7 @@ Conference.controller = (function($, dataContext, document) {
           // CG - Use of the common wrapper between WebSQL and IndexedDB allows us to render the results in the same way regardless.
           dataContext.processSessionsList(renderSessionsList);
           break;
-          
+
         case MAP_PAGE:
           if (!mapDisplayed || (currentMapWidth != get_map_width() ||
               currentMapHeight != get_map_height())) {
@@ -277,23 +277,74 @@ Conference.controller = (function($, dataContext, document) {
   }
 
   var handle_geolocation_query = function(pos) {
+
     position = pos;
 
     var the_height = get_map_height();
     var the_width = get_map_width();
 
-    var image_url = "http://maps.google.com/maps/api/staticmap?sensor=false&center=" + position.coords.latitude + "," +
-      position.coords.longitude + "&zoom=14&size=" +
-      the_width + "x" + the_height + "&markers=color:blue|label:S|" +
-      position.coords.latitude + ',' + position.coords.longitude;
+    var markerColours = ['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'ltblue', 'purple'];
+    var markerColoursIndex = 0;
 
-    $('#map-img').remove();
+    // var image_url = "http://maps.google.com/maps/api/staticmap?sensor=false&center=" + position.coords.latitude + "," +
+    //   position.coords.longitude + "&zoom=14&size=" +
+    //   the_width + "x" + the_height + "&markers=color:blue|label:S|" +
+    //   position.coords.latitude + ',' + position.coords.longitude;
 
-    jQuery('<img/>', {
-      id: 'map-img',
-      src: image_url,
-      title: 'Google map of my location'
-    }).appendTo('#mapPos');
+    //$('#map-img').remove();
+
+    var myLatlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+
+    var map = new google.maps.Map(document.getElementById('map-connor'), {
+       center: myLatlng,
+       zoom: 14,
+       mapTypeControl: false,
+       scaleControl: false,
+       streetViewControl: false,
+       rotateControl: false,
+       fullscreenControl: false
+     });
+
+    var marker = new google.maps.Marker({
+      position: myLatlng,
+      animation: google.maps.Animation.DROP
+    });
+
+    marker.setMap(map);
+
+     var id = $.mobile.activePage.attr('id');
+
+     $('#' + id + " .ui-content").height(get_map_height());
+
+     $('map-connor').height(get_map_height());
+
+     dataContext.getVenues(function(results) {
+
+       var marker;
+
+       for (var i = 0, len = results.length; i < len; i++) {
+
+         marker = new google.maps.Marker({
+           position: new google.maps.LatLng(results[i]['lat'], results[i]['long']),
+           animation: google.maps.Animation.DROP,
+           title: results[i]['name'],
+
+           // CG - Loop through potential marker colour images.
+           // Based on example from: https://developers.google.com/maps/documentation/javascript/markers#marker_labels
+           icon: 'http://maps.google.com/mapfiles/ms/icons/' + markerColours[markerColoursIndex++ % markerColours.length] + '-dot.png'
+         });
+
+         marker.setMap(map);
+
+       }
+
+     });
+
+    // jQuery('<img/>', {
+    //   id: 'map-img',
+    //   src: image_url,
+    //   title: 'Google map of my location'
+    // }).appendTo('#mapPos');
 
     mapDisplayed = true;
   };
@@ -337,6 +388,31 @@ Conference.controller = (function($, dataContext, document) {
 
     // CG - Changed now-deprecated event 'pageinit' to new 'pagecreate' handler.
     d.on('pagecreate', $(document), initialisePage);
+    //
+
+    function contentHeight() {
+
+      var id = $.mobile.activePage.attr('id');
+
+      var screen = $.mobile.getScreenHeight(),
+        header = $('#' + id + " .ui-header").hasClass("ui-header-fixed") ? $('#' + id + " .ui-header").outerHeight() - 1 : $('#' + id + " .ui-header").outerHeight(),
+        footer = $('#' + id + " .ui-footer").hasClass("ui-footer-fixed") ? $('#' + id + " .ui-footer").outerHeight() - 1 : $('#' + id + " .ui-footer").outerHeight(),
+        /* content div has padding of 1em = 16px (32px top+bottom). This step
+   can be skipped by subtracting 32px from content var directly. */
+        contentCurrent = $('#' + id +  " .ui-content").outerHeight() - $('#' + id + " .ui-content").height(),
+        content = screen - header - footer - contentCurrent;
+
+        console.log(screen);
+        console.log(header);
+        console.log(footer);
+        console.log(contentCurrent);
+
+    /* apply result */
+    $('#' + id + " .ui-content").height(content);
+}
+
+// d.on("pagecontainertransition", $(document), contentHeight);
+// d.on("throttledresize orientationchange", $(document), contentHeight);
 
 
   };

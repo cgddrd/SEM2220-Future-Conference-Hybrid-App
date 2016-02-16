@@ -1,0 +1,26 @@
+[
+{
+  "_id": 1,
+  "name": "Computer Science Reception",
+  "lat": "52.416258",
+  "long": "-4.065607",
+},
+{
+  "_id": 2,
+  "name": "Arts Centre",
+  "lat": "52.415574",
+  "long": "-4.063021",
+},
+{
+  "_id": 3,
+  "name": "Geography Tower",
+  "lat": "52.416706",
+  "long": "-4.066612",
+},
+{
+  "_id": 4,
+  "name": "Hugh Owen",
+  "lat": "52.415875",
+  "long": "-4.063686",
+},
+]
