@@ -4,7 +4,7 @@ Conference.dataContext = (function ($) {
 
     "use strict";
 
-    var useIndexedDB = false;
+    var useIndexedDB = true;
     var processorFunc = null;
 
     var DATABASE_NAME = 'conference_db';

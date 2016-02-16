@@ -1,31 +1,30 @@
 <?xml version='1.0' encoding='utf-8'?>
-
-<!-- CG - In order to add additional config options to the 'AndroidManifest.xml' file, we have to explicitly reference the Android XML namespace. -->
-<widget id="uk.ac.aber.dcs.clg11.conference"
-        version="1.0.0"
-        xmlns="http://www.w3.org/ns/widgets"
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:gap="http://phonegap.com/ns/1.0">
-
+<widget id="uk.ac.aber.dcs.clg11.conference" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:gap="http://phonegap.com/ns/1.0">
     <name>FoWC 2016</name>
-
     <description>
         SEM2220 - RWD Technical Assignment 2016
     </description>
-
     <author email="clg11@aber.ac.uk" href="http://cgddrd.me">
         Connor Goddard
     </author>
 
-    <!--
-      CG - Instruct Phonegap Build to compile the Android application as 'debuggable' to allow for remote debugging.
-      See: https://www.genuitec.com/products/gapdebug/learning-center/configuration/ for more information.
-    -->
     <gap:config-file parent="/manifest" platform="android">
         <application android:debuggable="true" />
     </gap:config-file>
 
+    <gap:config-file parent="/manifest/application" platform="android">
+      <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyCZAE4ivS6WPvUUb95P_nUu7QGSE-jJ1Q0"/>
+    </gap:config-file>
+
+    <gap:plugin name="cordova-plugin-googlemaps" source="npm">
+     <param name="API_KEY_FOR_ANDROID" value="AIzaSyCZAE4ivS6WPvUUb95P_nUu7QGSE-jJ1Q0" />
+     <param name="API_KEY_FOR_IOS" value="123" />
+   </gap:plugin>
+
     <content src="index.html" />
+
+    <preference name="android-build-tool" value="gradle" />
+
     <preference name="permissions" value="none" />
     <preference name="orientation" value="portrait" />
     <preference name="target-device" value="universal" />
@@ -41,10 +40,7 @@
     <preference name="disable-cursor" value="false" />
     <preference name="android-minSdkVersion" value="14" />
     <preference name="android-installLocation" value="auto" />
-
-    <!-- CG - Add notification support for 'alert' dialogs. -->
     <plugin name="org.apache.cordova.dialogs" source="pgb" />
-
     <gap:plugin name="org.apache.cordova.battery-status" />
     <gap:plugin name="org.apache.cordova.camera" />
     <gap:plugin name="org.apache.cordova.media-capture" />
@@ -63,26 +59,42 @@
     <gap:plugin name="org.apache.cordova.network-information" />
     <gap:plugin name="org.apache.cordova.splashscreen" />
     <gap:plugin name="org.apache.cordova.vibration" />
-
     <icon src="icon.png" />
     <icon gap:platform="android" gap:qualifier="ldpi" src="www/icons/android/ldpi.png" />
     <icon gap:platform="android" gap:qualifier="mdpi" src="www/icons/android/mdpi.png" />
     <icon gap:platform="android" gap:qualifier="hdpi" src="www/icons/android/hdpi.png" />
     <icon gap:platform="android" gap:qualifier="xhdpi" src="www/icons/android/xhdpi.png" />
     <access origin="*" />
+
     <plugin name="cordova-plugin-whitelist" version="1" />
+
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
     <allow-intent href="tel:*" />
     <allow-intent href="sms:*" />
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
+
+    <allow-navigation href="*" />
+    <allow-intent href="*" />
+    <access origin="*" />
+
+    <access origin="https://googleapis.com" subdomains="true"/>
+    <access origin="http://google.com" subdomains="true"/>
+    <access origin="http://gstatic.com" subdomains="true"/>
+    <access origin="https://google.com" subdomains="true"/>
+    <access origin="https://gstatic.com" subdomains="true"/>
+    <access origin="*.google.com"/>
+    <access origin="*.googleapis.com"/>
+
     <platform name="android">
         <allow-intent href="market:*" />
+        <preference name="android-targetSdkVersion" value="22" />
     </platform>
     <platform name="ios">
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
     </platform>
+
     <engine name="android" spec="~4.1.1" />
 </widget>
