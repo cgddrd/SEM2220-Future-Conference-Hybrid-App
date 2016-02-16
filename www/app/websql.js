@@ -28,9 +28,15 @@ Conference.websql = (function($) {
       successCallback(results.rows);
     }
 
+    function innerFailureCallback(transaction, error) {
+
+      failureCallback(error);
+
+    }
+
     db.transaction(function(queryTransaction) {
 
-      queryTransaction.executeSql(query, values, innerSuccessCallback, failureCallback);
+      queryTransaction.executeSql(query, values, innerSuccessCallback, innerFailureCallback);
 
     });
 

@@ -5,7 +5,6 @@ Conference.dataContext = (function ($) {
     "use strict";
 
     var useIndexedDB = false;
-    var db = null;
     var processorFunc = null;
 
     var DATABASE_NAME = 'conference_db';
@@ -23,7 +22,7 @@ Conference.dataContext = (function ($) {
 
     var init = function () {
 
-        var test = {
+        var indexedDBSchema = {
           'sessions': {
             'key': '_id',
             'indexes': {
@@ -61,7 +60,7 @@ Conference.dataContext = (function ($) {
 
         if (useIndexedDB) {
 
-          Conference.indexedDB.init(DATABASE_NAME, DATABASE_VERSION, test, function(db) {
+          Conference.indexedDB.init(DATABASE_NAME, DATABASE_VERSION, indexedDBSchema, function(db) {
 
             $.getJSON( "data/data.json", function( data ) {
 
@@ -69,13 +68,13 @@ Conference.dataContext = (function ($) {
 
                 console.info("Added data for IndexedDB.");
 
-              }, null);
+              }, errorDB);
 
             }).fail(function() {
               alert("Error: Unable to load session data from JSON source.");
             });
 
-          }, null);
+          }, errorDB);
 
         } else {
 
@@ -87,18 +86,13 @@ Conference.dataContext = (function ($) {
 
                 console.info("Added data for WebSQL.");
 
-              }, null);
-
+              }, errorDB);
 
             }).fail(function() {
               alert("Error: Unable to load session data from JSON source.");
             });
 
-          }, function(transactionError) {
-
-            alert("Error occured whilst creating WebSQL database: " + transactionError.message);
-
-          });
+          }, errorDB);
 
         }
 
@@ -117,29 +111,9 @@ Conference.dataContext = (function ($) {
 
       var webSQLQuery = {
 
-        // 'sessions': {
-        //   'index': 'dayId',
-        //   'equals': 1
-        // }
-        //
-        // 'sessions': {
-        //   '$and': {
-        //     'dayId': 1,
-        //     'title': 'hello'
-        //   }
-        // }
-        // 'sessions': {
-        //   'index': 'title, name',
-        //   'equals': 'test title, connor',
-        //   'lowerBound': 'lower',
-        //   'upperBound': 'upper'
-        // }
-
         'sessions': {
-
           'criteria': 'dayId = 1',
           'columns': '*'
-
         }
 
       }
@@ -152,11 +126,7 @@ Conference.dataContext = (function ($) {
             processorFuncCallback(results);
           }
 
-        }, function(evt, error) {
-
-          alert('Query error whilst parsing WebSQL DB: ' + error.message);
-
-        });
+        }, errorDB);
 
 
       } else {
@@ -167,11 +137,7 @@ Conference.dataContext = (function ($) {
             processorFuncCallback(results);
           }
 
-        }, function(evt, error) {
-
-          alert('Query error whilst parsing WebSQL DB: ' + error.message);
-
-        });
+        }, errorDB);
 
       }
 
@@ -192,4 +158,5 @@ Conference.dataContext = (function ($) {
     };
 
     return pub;
+
 }(jQuery));
