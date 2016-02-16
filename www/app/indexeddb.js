@@ -5,7 +5,8 @@ Conference.indexedDB = (function($) {
   var dbOpenRequest = null,
     db = null,
     dbName = '',
-    dbVersion = -1;
+    dbVersion = -1,
+    isCreate = false;
 
   function init(dbName, dbVersion, dbSchema, successCallback, failureCallback) {
 
@@ -28,19 +29,23 @@ Conference.indexedDB = (function($) {
       db = e.target.result;
 
       if (!db.objectStoreNames.contains("sessions")) {
-
+        this.isCreate = true;
         createDatabase(dbSchema);
-
       }
 
     }
 
     dbOpenRequest.onsuccess = function(evt) {
 
+      console.log("db loaded");
+
       db = evt.target.result;
 
       if (successCallback) {
-        successCallback(db);
+
+        // CG - We need to tell the callback if we created any tables or not.
+        successCallback(this.isCreate);
+        
       }
 
     };

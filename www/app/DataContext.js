@@ -4,7 +4,7 @@ Conference.dataContext = (function ($) {
 
     "use strict";
 
-    var useIndexedDB = false;
+    var useIndexedDB = true;
     var processorFunc = null;
 
     var DATABASE_NAME = 'conference_db';
@@ -17,7 +17,7 @@ Conference.dataContext = (function ($) {
     var DATABASE_VERSION = "1.0";
 
     var errorDB = function (err) {
-        console.log("Error processing SQL: " + err.code);
+        console.error("Error processing SQL: " + err.message);
     }
 
     var init = function () {
@@ -31,8 +31,11 @@ Conference.dataContext = (function ($) {
               'dayId': false
             }
           },
-          'test_objstore': {
-            'key': 'auto'
+          'venues': {
+            'key': '_id',
+            'indexes': {
+              'name': false
+            }
           }
         }
 
@@ -45,8 +48,7 @@ Conference.dataContext = (function ($) {
                 'autoIncrement': true
               },
               'title': {
-                'type': 'text',
-                'autoIncrement': false
+                'type': 'text'
               },
               'startTime': 'text',
               'endTime': 'text',
@@ -55,24 +57,46 @@ Conference.dataContext = (function ($) {
                 'type': 'integer'
               },
             }
+          },
+          'venues': {
+            'columns': {
+              '_id': {
+                'type': 'integer',
+                'primaryKey': true,
+                'autoIncrement': true
+              },
+              'name': 'text',
+              'lat': 'text',
+              'long': 'text',
+            }
           }
         }
 
         if (useIndexedDB) {
 
-          Conference.indexedDB.init(DATABASE_NAME, DATABASE_VERSION, indexedDBSchema, function(db) {
+          Conference.indexedDB.init(DATABASE_NAME, DATABASE_VERSION, indexedDBSchema, function(isCreate) {
 
-            $.getJSON( "data/data.json", function( data ) {
+            if (isCreate) {
 
-              Conference.indexedDB.insertInto('sessions', data, function() {
+              $.getJSON( "data/data.json", function( data ) {
 
-                console.info("Added data for IndexedDB.");
+                Conference.indexedDB.insertInto('sessions', data['sessions'], function() {
 
-              }, errorDB);
+                  console.info("Added session data for IndexedDB.");
 
-            }).fail(function() {
-              alert("Error: Unable to load session data from JSON source.");
-            });
+                }, errorDB);
+
+                Conference.indexedDB.insertInto('venues', data['venues'], function() {
+
+                  console.info("Added venue data for IndexedDB.");
+
+                }, errorDB);
+
+              }).fail(function(err) {
+                alert("Error: Unable to load data from JSON source.");
+              });
+
+            }
 
           }, errorDB);
 
@@ -82,14 +106,20 @@ Conference.dataContext = (function ($) {
 
             $.getJSON( "data/data.json", function( data ) {
 
-              Conference.websql.insertInto('sessions', data, function() {
+              Conference.websql.insertInto('sessions', data['sessions'], function() {
 
-                console.info("Added data for WebSQL.");
+                console.info("Added session data for WebSQL.");
+
+              }, errorDB);
+
+              Conference.websql.insertInto('venues', data['venues'], function() {
+
+                console.info("Added venue data for WebSQL.");
 
               }, errorDB);
 
             }).fail(function() {
-              alert("Error: Unable to load session data from JSON source.");
+              alert("Error: Unable to load data from JSON source.");
             });
 
           }, errorDB);
@@ -97,6 +127,49 @@ Conference.dataContext = (function ($) {
         }
 
     };
+
+    var getVenues = function(resultsCallback) {
+
+      var indexedDBQuery = {
+
+        'venues': {
+          'index': 'name'
+        }
+
+      }
+
+      var webSQLQuery = {
+
+        'venues': {
+          'columns': '*'
+        }
+
+      }
+
+      if (useIndexedDB) {
+
+        Conference.indexedDB.selectQuery(indexedDBQuery, function(results) {
+
+          if (typeof resultsCallback === "function") {
+            resultsCallback(results);
+          }
+
+        }, errorDB);
+
+      } else {
+
+        Conference.websql.selectQuery(webSQLQuery, function(results) {
+
+          if (typeof resultsCallback === "function") {
+            resultsCallback(results);
+          }
+
+        }, errorDB);
+
+
+      }
+
+    }
 
     var getSessions = function(processorFuncCallback) {
 
@@ -154,6 +227,7 @@ Conference.dataContext = (function ($) {
     // The methods we're publishing to other JS files
     var pub = {
         init:init,
+        getVenues: getVenues,
         processSessionsList:processSessionsList  // Called by Controller.js
     };
 

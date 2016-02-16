@@ -9,6 +9,9 @@
     "installed_plugins": {
         "cordova-plugin-whitelist": {
             "PACKAGE_NAME": "uk.ac.aber.dcs.clg11.conference"
+        },
+        "plugin.google.maps": {
+            "PACKAGE_NAME": "uk.ac.aber.dcs.clg11.conference"
         }
     },
     "dependent_plugins": {}

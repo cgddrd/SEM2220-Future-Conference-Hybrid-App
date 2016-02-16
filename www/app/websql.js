@@ -6,7 +6,10 @@ Conference.websql = (function($) {
     dbName = '',
     dbOldVersion = '0',
     dbVersion = -1,
-    createSQLTemplate = "CREATE TABLE %table% (%columns%)";
+    createSQLTemplate = "CREATE TABLE %table% (%columns%)",
+    insertSQLTemplate = "INSERT INTO %table% (%columns%) VALUES (%sqlParams%);",
+    selectSQLTemplate = "SELECT %selectColumns% FROM %table% %criteriaQuery%;",
+    criteriaQuerySQLTemplate = "WHERE %criteria%";
 
   function performQuery(query, successCallback, failureCallback) {
 
@@ -23,22 +26,32 @@ Conference.websql = (function($) {
     // CG - This "curried" function sits inside our exisiting one so it can access the 'successCallback'.
     function innerSuccessCallback(sqlTransaction, results) {
 
-      // CG - Here we are only interested in passing back the collection of results.
-      // This ensures the WebSQL API remains consist with IndexedDb in its return values.
-      successCallback(results.rows);
+
+      // CG - On some occasions, we do not want to call anything in particular on success (e.g. after we have completed a 'CREATE' query).
+      if (successCallback) {
+
+        // CG - Here we are only interested in passing back the collection of results.
+        // This ensures the WebSQL API remains consist with IndexedDb in its return values.
+        successCallback(results.rows);
+      }
+
     }
 
     function innerFailureCallback(transaction, error) {
-
       failureCallback(error);
-
     }
 
+    function innerTransactionFailureCallback(error) {
+      failureCallback(error);
+    }
+
+
+    // CG - Why would the WebSQL API swap around the success and failure callbacks between 'executeSql' and 'db.transaction' functions?!
     db.transaction(function(queryTransaction) {
 
       queryTransaction.executeSql(query, values, innerSuccessCallback, innerFailureCallback);
 
-    });
+    }, innerTransactionFailureCallback);
 
   }
 
@@ -76,82 +89,82 @@ Conference.websql = (function($) {
 
   }
 
-  function prepareCreateStatement(dbSchema) {
+  function prepareCreateStatement(currentObjectStoreName, currentObjectStoreSettings) {
 
-    for (currentObjectStoreName in dbSchema) {
+    var currentObjectStoreColumnSettings = currentObjectStoreSettings['columns'];
+    var columns = [];
+    var createString = "";
 
-      if (dbSchema.hasOwnProperty(currentObjectStoreName)) {
+    if (currentObjectStoreSettings && currentObjectStoreColumnSettings) {
 
-        var currentObjectStoreSettings = dbSchema[currentObjectStoreName];
-        var currentObjectStoreColumnSettings = currentObjectStoreSettings['columns'];
-        var columns = [];
-        var createString = "";
+      for (currentColumnName in currentObjectStoreColumnSettings) {
 
-        if (currentObjectStoreSettings && currentObjectStoreColumnSettings) {
+        var columnCreateString = currentColumnName;
 
-          for (currentColumnName in currentObjectStoreColumnSettings) {
+        if (isString(currentObjectStoreColumnSettings[currentColumnName])) {
 
-            var columnCreateString = currentColumnName;
+          columnCreateString = columnCreateString.concat(" " + currentObjectStoreColumnSettings[currentColumnName].toUpperCase());
 
-            if (isString(currentObjectStoreColumnSettings[currentColumnName])) {
+        } else {
 
-              columnCreateString = columnCreateString.concat(" " + currentObjectStoreColumnSettings[currentColumnName].toUpperCase());
+          var currentIndividualColumnSettings = currentObjectStoreColumnSettings[currentColumnName];
 
-            } else {
+          if (currentIndividualColumnSettings['type']) {
 
-              var currentIndividualColumnSettings = currentObjectStoreColumnSettings[currentColumnName];
-
-              if (currentIndividualColumnSettings['type']) {
-
-                columnCreateString = columnCreateString.concat(" " + currentIndividualColumnSettings['type'].toUpperCase());
-
-              }
-
-              if (currentIndividualColumnSettings['primaryKey']) {
-
-                columnCreateString = columnCreateString.concat(" PRIMARY KEY");
-
-              }
-
-              if (currentIndividualColumnSettings['autoIncrement']) {
-
-                columnCreateString = columnCreateString.concat(" AUTOINCREMENT");
-
-              }
-
-              if (!currentIndividualColumnSettings['allowNulls']) {
-
-                columnCreateString = columnCreateString.concat(" NOT NULL");
-
-              }
-
-            }
-
-            columns.push(columnCreateString);
+            columnCreateString = columnCreateString.concat(" " + currentIndividualColumnSettings['type'].toUpperCase());
 
           }
+
+          if (currentIndividualColumnSettings['primaryKey']) {
+
+            columnCreateString = columnCreateString.concat(" PRIMARY KEY");
+
+          }
+
+          if (currentIndividualColumnSettings['autoIncrement']) {
+
+            columnCreateString = columnCreateString.concat(" AUTOINCREMENT");
+
+          }
+
+          if (!currentIndividualColumnSettings['allowNulls']) {
+
+            columnCreateString = columnCreateString.concat(" NOT NULL");
+
+          }
+
         }
+
+        columns.push(columnCreateString);
+
       }
     }
 
     return createSQLTemplate.replace('%table%', currentObjectStoreName)
       .replace('%columns%', columns.join(', '));
 
-
   }
 
   function createDatabase(dbSchema, successCallback, failureCallback) {
 
-    var createQueryString = prepareCreateStatement(dbSchema);
+    for (currentObjectStoreName in dbSchema) {
 
-    performQuery(createQueryString, successCallback, failureCallback);
+      if (dbSchema.hasOwnProperty(currentObjectStoreName)) {
+
+        var createQueryString = prepareCreateStatement(currentObjectStoreName, dbSchema[currentObjectStoreName]);
+
+        performQuery(createQueryString, null, failureCallback);
+
+      }
+
+    }
+
+    successCallback(this.db);
 
   }
 
 
   function insertInto(objectStoreName, data, successCallback, failureCallback) {
-
-    var insertTemplate = "INSERT INTO %table% (%columns%) VALUES (%sqlParams%);";
 
     for (var i = 0, len = data.length; i < len; i++) {
 
@@ -175,9 +188,9 @@ Conference.websql = (function($) {
 
       }
 
-      var queryString = insertTemplate.replace('%table%', objectStoreName)
-                                      .replace('%columns%', columns.join(','))
-                                      .replace('%sqlParams%', sqlParams.join(','));
+      var queryString = insertSQLTemplate.replace('%table%', objectStoreName)
+        .replace('%columns%', columns.join(','))
+        .replace('%sqlParams%', sqlParams.join(','));
 
       performParameterisedQuery(queryString, values, successCallback, failureCallback);
 
@@ -186,9 +199,6 @@ Conference.websql = (function($) {
   }
 
   function selectQuery(query, successCallback, failureCallback) {
-
-    var selectSQLTemplate = "SELECT %selectColumns% FROM %table% %criteriaQuery%;";
-    var criteriaQuerySQLTemplate = "WHERE %criteria%"
 
     for (targetObjectStoreName in query) {
 
@@ -199,7 +209,7 @@ Conference.websql = (function($) {
 
         // CG - Set the default to return all columns from a table for the given query.
         var selectColumns = "*";
-        var criteriaQuery  = "";
+        var criteriaQuery = "";
 
         if (querySettings['columns']) {
           selectColumns = querySettings['columns'];
@@ -208,14 +218,14 @@ Conference.websql = (function($) {
         if (querySettings['criteria']) {
 
           criteriaQuery = criteriaQuerySQLTemplate.replace('%criteria%',
-                                                          sanitiseSQLQueryInput(querySettings['criteria']));
+            sanitiseSQLQueryInput(querySettings['criteria']));
 
         }
 
 
         var selectSQLQuery = selectSQLTemplate.replace('%selectColumns%', selectColumns)
-                                              .replace('%table%', tableName)
-                                              .replace('%criteriaQuery%', criteriaQuery);
+          .replace('%table%', tableName)
+          .replace('%criteriaQuery%', criteriaQuery);
 
         // CG - TODO: Really we want to be using a parameterised SQL query. Need to figure this out.
         // Although, it's worth pointing out that we shouldn't be storing any sensitive information on the client machine anyway?
