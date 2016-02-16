@@ -15,7 +15,9 @@ Conference.indexedDB = (function($) {
     }
 
     this.dbName = dbName;
-    this.dbVersion = dbVersion;
+
+    // CG - For IndexedDB, version number has to be an Integer.
+    this.dbVersion = parseInt(dbVersion);
 
     dbOpenRequest = window.indexedDB.open(dbName, dbVersion);
 

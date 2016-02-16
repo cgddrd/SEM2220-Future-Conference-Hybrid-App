@@ -17,14 +17,22 @@ Conference.websql = (function($) {
   function performParameterisedQuery(query, values, successCallback, failureCallback) {
 
     if (!db) {
-      failureCallback(null, new Error("Unable to perform SQL query: no connection to database."));
+      failureCallback(new Error("Unable to perform SQL query: no connection to database."));
+    }
+
+    // CG - This "curried" function sits inside our exisiting one so it can access the 'successCallback'.
+    function innerSuccessCallback(sqlTransaction, results) {
+
+      // CG - Here we are only interested in passing back the collection of results.
+      // This ensures the WebSQL API remains consist with IndexedDb in its return values.
+      successCallback(results.rows);
     }
 
     db.transaction(function(queryTransaction) {
 
-      queryTransaction.executeSql(query, values, successCallback, failureCallback);
+      queryTransaction.executeSql(query, values, innerSuccessCallback, failureCallback);
 
-    }, successCallback, failureCallback);
+    });
 
   }
 
@@ -37,6 +45,7 @@ Conference.websql = (function($) {
     }
 
     this.dbName = dbName;
+    this.dbOldVersion = dbOldVersion;
     this.dbVersion = dbVersion;
 
     // CG - We deliberatly set an empty value for the version so that it defaults to 0, and therefore we know to populate it on creation.
@@ -204,11 +213,7 @@ Conference.websql = (function($) {
 
         // CG - TODO: Really we want to be using a parameterised SQL query. Need to figure this out.
         // Although, it's worth pointing out that we shouldn't be storing any sensitive information on the client machine anyway?
-        performQuery(selectSQLQuery, function(tx, result) {
-
-          successCallback(result.rows);
-
-        }, failureCallback);
+        performQuery(selectSQLQuery, successCallback, failureCallback);
 
       }
 

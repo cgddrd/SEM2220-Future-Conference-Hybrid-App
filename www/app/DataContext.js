@@ -17,10 +17,6 @@ Conference.dataContext = (function ($) {
     // The current database version supported by this script
     var DATABASE_VERSION = "1.0";
 
-    // CG - These database versions have to be an integer.
-    var INDEXED_DB_OLD_DATABASE_VERSION = 0;
-    var INDEXED_DB_DATABASE_VERSION = 1;
-
     var errorDB = function (err) {
         console.log("Error processing SQL: " + err.code);
     }
@@ -65,7 +61,7 @@ Conference.dataContext = (function ($) {
 
         if (useIndexedDB) {
 
-          Conference.indexedDB.init("conference_db", 1, test, function(db) {
+          Conference.indexedDB.init(DATABASE_NAME, DATABASE_VERSION, test, function(db) {
 
             $.getJSON( "data/data.json", function( data ) {
 
@@ -83,7 +79,7 @@ Conference.dataContext = (function ($) {
 
         } else {
 
-          Conference.websql.init("conference_db", 0, 1, webSQLSchema, function(db) {
+          Conference.websql.init(DATABASE_NAME, OLD_DATABASE_VERSION, DATABASE_VERSION, webSQLSchema, function(db) {
 
             $.getJSON( "data/data.json", function( data ) {
 
@@ -98,7 +94,7 @@ Conference.dataContext = (function ($) {
               alert("Error: Unable to load session data from JSON source.");
             });
 
-          }, function(queryTransaction, transactionError) {
+          }, function(transactionError) {
 
             alert("Error occured whilst creating WebSQL database: " + transactionError.message);
 
