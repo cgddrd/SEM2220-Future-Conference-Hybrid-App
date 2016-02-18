@@ -74,7 +74,7 @@ Conference.dataContext = (function ($) {
 
         if (useIndexedDB) {
 
-          Conference.indexedDB.init(DATABASE_NAME, DATABASE_VERSION, indexedDBSchema, function(isCreate) {
+          Conference.indexedDB.init(DATABASE_NAME, DATABASE_VERSION, indexedDBSchema, function indexedDBInitialised(isCreate) {
 
             if (isCreate) {
 
@@ -102,7 +102,7 @@ Conference.dataContext = (function ($) {
 
         } else {
 
-          Conference.websql.init(DATABASE_NAME, OLD_DATABASE_VERSION, DATABASE_VERSION, webSQLSchema, function(db) {
+          Conference.websql.init(DATABASE_NAME, OLD_DATABASE_VERSION, DATABASE_VERSION, webSQLSchema, function webSQLInitialised(db) {
 
             $.getJSON( "data/data.json", function( data ) {
 

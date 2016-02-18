@@ -37,15 +37,13 @@ Conference.indexedDB = (function($) {
 
     dbOpenRequest.onsuccess = function(evt) {
 
-      console.log("db loaded");
-
       db = evt.target.result;
 
       if (successCallback) {
 
         // CG - We need to tell the callback if we created any tables or not.
         successCallback(this.isCreate);
-        
+
       }
 
     };
@@ -196,7 +194,8 @@ Conference.indexedDB = (function($) {
 
       }
 
-      // CG - SANITY CHECK: We can only query one object store per call, therefore we ignore any other queries apart from whatever the first one is (no guarantee of order).
+      // CG - SANITY CHECK: We can only query one object store per call,
+      // therefore we ignore any other queries apart from whatever the first one is (no guarantee of order).
       break;
 
     }
