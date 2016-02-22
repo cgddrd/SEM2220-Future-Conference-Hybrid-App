@@ -17,7 +17,7 @@ Conference.dataContext = (function ($) {
     var DATABASE_VERSION = "1.0";
 
     var errorDB = function (err) {
-        console.error("Error processing SQL: " + err.message);
+        console.error("Error processing database: " + err.message);
     }
 
     var init = function () {

@@ -17,6 +17,8 @@ Conference.controller = (function($, dataContext, document) {
 
   var sessionItemTemplate = '<li><a href=""><div class="session-list-item"><h3>%title%</h3><div><h6>%type%</h6><h6>%start-time% to %end-time%</h6></div></div></li>';
 
+  var hasTriggeredPageChangeError = false;
+
   /*
    * CG - Fixed bug whereby variable 'sList' was undefined.
    *
@@ -36,9 +38,14 @@ Conference.controller = (function($, dataContext, document) {
   // rather to have no transition (i.e. tabbed behaviour)
   var initialisePage = function(event) {
     change_page_back_history();
+    // CG - Setup event listener to check for root url redirects.
+    setup_root_page_detection();
   };
 
   var onPageChange = function(event, data) {
+
+    // CG - When we go to change to another page, make sure we reset the error trigger flag in order to display the error message is required.
+    hasTriggeredPageChangeError = false;
 
     try {
 
@@ -116,10 +123,10 @@ Conference.controller = (function($, dataContext, document) {
       // CG - Cache the termination value inside of the loop - more efficient.
       for (var i = 0, len = sessionsList.length; i < len; i++) {
 
-        var compiledTemplate = compileTemplate(sessionItemTemplate, ['%title%', '%type%', '%start-time%', '%end-time%'],
-                                                                    [sessionsList[i].title, sessionsList[i].type,
-                                                                     sessionsList[i].startTime, sessionsList[i].endTime],
-                                                                    'gi');
+        var compiledTemplate = compileTemplate(sessionItemTemplate, ['%title%', '%type%', '%start-time%', '%end-time%'], [sessionsList[i].title, sessionsList[i].type,
+            sessionsList[i].startTime, sessionsList[i].endTime
+          ],
+          'gi');
 
         listArray.push(compiledTemplate);
 
@@ -173,26 +180,76 @@ Conference.controller = (function($, dataContext, document) {
     $(databaseNotInitialisedMsg).appendTo(view);
   }
 
+
+  // CG - Provides a common function for specifing manual triggering and customisation of page redirects.
+  var jqmAjaxPageRedirect = function(pageHref) {
+
+    $.mobile.changePage(pageHref, { // Go to the URL
+      transition: "none",
+      changeHash: false
+    });
+
+    return false;
+
+  }
+
   var change_page_back_history = function() {
 
-    try {
-
-      $('a[data-role="tab"]').each(function() {
-        var anchor = $(this);
-        anchor.bind("click", function() {
-          $.mobile.changePage(anchor.attr("href"), { // Go to the URL
-            transition: "none",
-            changeHash: false
-          });
-          return false;
-        });
-      });
-
-    } catch (error) {
-      console.error("An error occured whilst changing page back history: " + error.message);
-    }
+    // // CG - Add error catching when changing page.
+    // try {
+    //
+    //   //$('a[data-role="tab"]').each(function() {
+    //     $('a[data-role="tab"]').on('click', function() {
+    //
+    //       console.log("hello");
+    //
+    //
+    //
+    //     });
+    // //  });
+    //
+    // } catch (error) {
+    //   alert("An error occured whilst changing page back history: " + error.message);
+    // }
 
   };
+
+  // CG - Add listener to auto-redirect to first page (default homepage for JQM) if anchor 'href' is set to root '/' character.
+  var setup_root_page_detection = function() {
+
+    $('a').on('click', function() {
+
+      try {
+
+        // CG - We are specifically looking for the single '/' character, which normally would redirect to the server root (causes JQM to fall over).
+        if ($(this).attr("href") === '/') {
+
+          // CG - Find the ID of the first JQM page and navigate to there. (Default behaviour of JQM on startup anyway).
+          if ($('div[data-role="page"]').first().attr('id')) {
+
+            return jqmAjaxPageRedirect('#' + $('div[data-role="page"]').first().attr('id'));
+
+          } else {
+            throw Error("Unable to redirect to homepage - no ID found.");
+          }
+
+        } else {
+
+          // CG - Note we are now using our 'generic' function for initiating a page transition in JQM.
+          return jqmAjaxPageRedirect($(this).attr("href"));
+
+        }
+
+
+      } catch (error) {
+
+        alert("Navigation Error: " + error);
+
+      }
+
+    });
+
+  }
 
   var deal_with_geolocation = function() {
     var phoneGapApp = (document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1);
@@ -283,70 +340,77 @@ Conference.controller = (function($, dataContext, document) {
     var the_height = get_map_height();
     var the_width = get_map_width();
 
+    // CG - Define the collection of colours we can use for pointer images.
     var markerColours = ['red', 'green', 'blue', 'yellow', 'orange', 'pink', 'ltblue', 'purple'];
     var markerColoursIndex = 0;
+
+    // CG - Replaced the static map image with an interactive Google Maps API component.
 
     // var image_url = "http://maps.google.com/maps/api/staticmap?sensor=false&center=" + position.coords.latitude + "," +
     //   position.coords.longitude + "&zoom=14&size=" +
     //   the_width + "x" + the_height + "&markers=color:blue|label:S|" +
     //   position.coords.latitude + ',' + position.coords.longitude;
-
     //$('#map-img').remove();
-
-    var myLatlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-
-    var map = new google.maps.Map(document.getElementById('map-connor'), {
-       center: myLatlng,
-       zoom: 14,
-       mapTypeControl: false,
-       scaleControl: false,
-       streetViewControl: false,
-       rotateControl: false,
-       fullscreenControl: false
-     });
-
-    var marker = new google.maps.Marker({
-      position: myLatlng,
-      animation: google.maps.Animation.DROP
-    });
-
-    marker.setMap(map);
-
-     var id = $.mobile.activePage.attr('id');
-
-     $('#' + id + " .ui-content").height(get_map_height());
-
-     $('map-connor').height(get_map_height());
-
-     dataContext.getVenues(function(results) {
-
-       var marker;
-
-       for (var i = 0, len = results.length; i < len; i++) {
-
-         marker = new google.maps.Marker({
-           position: new google.maps.LatLng(results[i]['lat'], results[i]['long']),
-           animation: google.maps.Animation.DROP,
-           title: results[i]['name'],
-
-           // CG - Loop through potential marker colour images.
-           // Based on example from: https://developers.google.com/maps/documentation/javascript/markers#marker_labels
-           icon: 'http://maps.google.com/mapfiles/ms/icons/' + markerColours[markerColoursIndex++ % markerColours.length] + '-dot.png'
-         });
-
-         marker.setMap(map);
-
-       }
-
-     });
-
     // jQuery('<img/>', {
     //   id: 'map-img',
     //   src: image_url,
     //   title: 'Google map of my location'
     // }).appendTo('#mapPos');
 
+    // CG - Setup the correct height of the Google Maps widget to fit the available space.
+    var id = $.mobile.activePage.attr('id');
+    $('#' + id + " .ui-content").height(get_map_height());
+    $('map-widget').height(get_map_height());
+
+    // CG - Make use of the exisiting lat/long coords to display position on interactive map widget.
+    var myLatlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+
+    var map = new google.maps.Map(document.getElementById('map-widget'), {
+      center: myLatlng,
+      zoom: 14,
+
+      // CG - Disable all 'standard' Google Maps API controls.
+      mapTypeControl: false,
+      scaleControl: false,
+      streetViewControl: false,
+      rotateControl: false,
+      fullscreenControl: false
+    });
+
+    // CG - Place a marker in the location of the user.
+    var positionMarker = new google.maps.Marker({
+      position: myLatlng,
+      animation: google.maps.Animation.DROP
+    });
+
+    positionMarker.setMap(map);
+
+
+    // CG - Loop through the venues stored in the database, and place a different coloured marker on the map widget for each.
+    dataContext.getVenues(function(results) {
+
+      var marker;
+
+      for (var i = 0, len = results.length; i < len; i++) {
+
+        marker = new google.maps.Marker({
+          position: new google.maps.LatLng(results[i]['lat'], results[i]['long']),
+          animation: google.maps.Animation.DROP,
+          title: results[i]['name'],
+
+          // CG - Loop through potential marker colour images.
+          // Based on example from: https://developers.google.com/maps/documentation/javascript/markers#marker_labels
+          icon: 'http://maps.google.com/mapfiles/ms/icons/' + markerColours[markerColoursIndex++ % markerColours.length] + '-dot.png'
+        });
+
+        marker.setMap(map);
+
+      }
+
+    });
+
     mapDisplayed = true;
+
   };
 
   var init = function() {
@@ -360,18 +424,25 @@ Conference.controller = (function($, dataContext, document) {
     }
 
     // CG - This event fires PRIOR to attempting to change this page. This allows us to catch any errors on page change events that could break JQM.
-    d.on('pagebeforechange', $(document), function(event, data) {
+    // CG - Also updated now-deprecated 'pagebeforechange' event name to use new callback on pagecontainer widget. See: https://api.jquerymobile.com/pagebeforechange/
+    d.on('pagecontainerbeforechange', $(document), function(e, data) {
 
-      if (typeof data == "undefined" || typeof data.toPage == "undefined") {
-
-        //console.error('Error ');
-        //return false;
+      if (typeof data === "undefined" || typeof data.toPage === "undefined") {
 
         /*
          * CG - If we click a link/button/tab to another page with an empty or missing 'href' attribute, log the error
          * but prevent JQM from falling over.
          */
-        alert("Error whilst changing page: 'data' or 'data.toPage' value set to 'undefined'.");
+
+         // CG - As 'pagecontainerbeforechange' is triggered TWICE during the page change process (See: https://api.jquerymobile.com/pagecontainer/#event-beforechange)
+         // we need to use a flag to make sure we only display the error message ONCE per page change action.
+         if (!hasTriggeredPageChangeError) {
+             alert("Error whilst changing page: Target page does not exist.");
+
+             // CG - Set the flag to true to make sure we don't display the error message again on the SECOND call to 'pagecontainerbeforechange' that occurs.
+             hasTriggeredPageChangeError = true;
+         }
+
         return false;
 
       }
@@ -388,32 +459,6 @@ Conference.controller = (function($, dataContext, document) {
 
     // CG - Changed now-deprecated event 'pageinit' to new 'pagecreate' handler.
     d.on('pagecreate', $(document), initialisePage);
-    //
-
-    function contentHeight() {
-
-      var id = $.mobile.activePage.attr('id');
-
-      var screen = $.mobile.getScreenHeight(),
-        header = $('#' + id + " .ui-header").hasClass("ui-header-fixed") ? $('#' + id + " .ui-header").outerHeight() - 1 : $('#' + id + " .ui-header").outerHeight(),
-        footer = $('#' + id + " .ui-footer").hasClass("ui-footer-fixed") ? $('#' + id + " .ui-footer").outerHeight() - 1 : $('#' + id + " .ui-footer").outerHeight(),
-        /* content div has padding of 1em = 16px (32px top+bottom). This step
-   can be skipped by subtracting 32px from content var directly. */
-        contentCurrent = $('#' + id +  " .ui-content").outerHeight() - $('#' + id + " .ui-content").height(),
-        content = screen - header - footer - contentCurrent;
-
-        console.log(screen);
-        console.log(header);
-        console.log(footer);
-        console.log(contentCurrent);
-
-    /* apply result */
-    $('#' + id + " .ui-content").height(content);
-}
-
-// d.on("pagecontainertransition", $(document), contentHeight);
-// d.on("throttledresize orientationchange", $(document), contentHeight);
-
 
   };
 
@@ -441,25 +486,26 @@ Conference.controller = (function($, dataContext, document) {
 (function(proxied) {
   window.alert = function() {
 
-    // CG - If we are within the Phonegap wrapper and we have access to the 'notification' plugin, use native dialogs.
+    // CG - If we are within the Phonegap wrapper and we have access to the 'notification' plugin, use native popup dialogs.
     if (navigator.notification && navigator.notification.alert) {
 
       return navigator.notification.alert(
         arguments[0], // message
-        null, // callback (no callback in this case).
-        "FoWC - Alert", // title
-        "OK" // buttonName
+        null, // Callback (no callback in this case).
+        "FoWC", // Alert title
+        "OK" // Button
       );
 
-    // CG - Otherwise, use the default web view alert dialog (e.g. if we are viewing via a normal web browser).
+      // CG - Otherwise, use the default web view alert dialog (e.g. if we are viewing via a normal web browser).
     } else {
 
-      // CG - Return the original proxief function.
+      // CG - Return the original proxied function (i.e. normal browser-based dialogs).
       return proxied.apply(this, arguments);
 
     }
 
   };
+
 })(window.alert);
 
 // Called when jQuery Mobile is loaded and ready to use.
