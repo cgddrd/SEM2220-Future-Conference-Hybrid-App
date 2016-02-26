@@ -1,6 +1,6 @@
 var Conference = Conference || {};
 
-Conference.indexedDB = (function($) {
+Conference.IndexedDB = (function($) {
 
   var dbOpenRequest = null,
     db = null,

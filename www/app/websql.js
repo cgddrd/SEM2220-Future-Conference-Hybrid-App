@@ -1,6 +1,6 @@
 var Conference = Conference || {};
 
-Conference.websql = (function($) {
+Conference.WebSQL = (function($) {
 
   var db = null,
     dbName = '',

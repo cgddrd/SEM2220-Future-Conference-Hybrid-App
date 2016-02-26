@@ -37,9 +37,13 @@ Conference.controller = (function($, dataContext, document) {
   // We also don't want the usual page transition effect but
   // rather to have no transition (i.e. tabbed behaviour)
   var initialisePage = function(event) {
-    change_page_back_history();
-    // CG - Setup event listener to check for root url redirects.
+
+    // CG - This function has now been replaced by the 'setup_root_page_detection' function.
+    //change_page_back_history();
+
+    // CG - Setup event listener to check for root url redirects and configure jQM back history (exisiting functionality).
     setup_root_page_detection();
+
   };
 
   var onPageChange = function(event, data) {
@@ -195,22 +199,7 @@ Conference.controller = (function($, dataContext, document) {
 
   var change_page_back_history = function() {
 
-    // // CG - Add error catching when changing page.
-    // try {
-    //
-    //   //$('a[data-role="tab"]').each(function() {
-    //     $('a[data-role="tab"]').on('click', function() {
-    //
-    //       console.log("hello");
-    //
-    //
-    //
-    //     });
-    // //  });
-    //
-    // } catch (error) {
-    //   alert("An error occured whilst changing page back history: " + error.message);
-    // }
+    // CG - This function has now been replaced by the 'setup_root_page_detection' function.
 
   };
 
@@ -335,6 +324,8 @@ Conference.controller = (function($, dataContext, document) {
 
   var handle_geolocation_query = function(pos) {
 
+    console.log("map init");
+
     position = pos;
 
     var the_height = get_map_height();
@@ -359,6 +350,9 @@ Conference.controller = (function($, dataContext, document) {
 
     // CG - Setup the correct height of the Google Maps widget to fit the available space.
     var id = $.mobile.activePage.attr('id');
+
+    console.log(id);
+
     $('#' + id + " .ui-content").height(get_map_height());
     $('map-widget').height(get_map_height());
 

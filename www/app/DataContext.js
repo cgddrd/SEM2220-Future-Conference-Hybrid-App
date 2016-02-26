@@ -4,7 +4,10 @@ Conference.dataContext = (function ($) {
 
     "use strict";
 
-    var useIndexedDB = true;
+
+    // CG - This flag indicates whether we should be using the IndexedDB or WebSQL mechanism for local database storage.
+    var useIndexedDB = false;
+
     var processorFunc = null;
 
     var DATABASE_NAME = 'conference_db';
@@ -39,7 +42,7 @@ Conference.dataContext = (function ($) {
           }
         }
 
-        var webSQLSchema = {
+        var webSQLDBSchema = {
           'sessions': {
             'columns': {
               '_id': {
@@ -72,21 +75,23 @@ Conference.dataContext = (function ($) {
           }
         }
 
+        // CG - When setting up the database, we have a couple of minor differences between the WebSQL and IndexedDB implementations that we need to consider.
+
         if (useIndexedDB) {
 
-          Conference.indexedDB.init(DATABASE_NAME, DATABASE_VERSION, indexedDBSchema, function indexedDBInitialised(isCreate) {
+          Conference.IndexedDB.init(DATABASE_NAME, DATABASE_VERSION, indexedDBSchema, function indexedDBInitialised(isCreate) {
 
             if (isCreate) {
 
               $.getJSON( "data/data.json", function( data ) {
 
-                Conference.indexedDB.insertInto('sessions', data['sessions'], function() {
+                Conference.IndexedDB.insertInto('sessions', data['sessions'], function() {
 
                   console.info("Added session data for IndexedDB.");
 
                 }, errorDB);
 
-                Conference.indexedDB.insertInto('venues', data['venues'], function() {
+                Conference.IndexedDB.insertInto('venues', data['venues'], function() {
 
                   console.info("Added venue data for IndexedDB.");
 
@@ -102,17 +107,17 @@ Conference.dataContext = (function ($) {
 
         } else {
 
-          Conference.websql.init(DATABASE_NAME, OLD_DATABASE_VERSION, DATABASE_VERSION, webSQLSchema, function webSQLInitialised(db) {
+          Conference.WebSQL.init(DATABASE_NAME, OLD_DATABASE_VERSION, DATABASE_VERSION, webSQLDBSchema, function webSQLInitialised(db) {
 
             $.getJSON( "data/data.json", function( data ) {
 
-              Conference.websql.insertInto('sessions', data['sessions'], function() {
+              Conference.WebSQL.insertInto('sessions', data['sessions'], function() {
 
                 console.info("Added session data for WebSQL.");
 
               }, errorDB);
 
-              Conference.websql.insertInto('venues', data['venues'], function() {
+              Conference.WebSQL.insertInto('venues', data['venues'], function() {
 
                 console.info("Added venue data for WebSQL.");
 
@@ -148,7 +153,7 @@ Conference.dataContext = (function ($) {
 
       if (useIndexedDB) {
 
-        Conference.indexedDB.selectQuery(indexedDBQuery, function(results) {
+        Conference.IndexedDB.selectQuery(indexedDBQuery, function(results) {
 
           if (typeof resultsCallback === "function") {
             resultsCallback(results);
@@ -158,7 +163,7 @@ Conference.dataContext = (function ($) {
 
       } else {
 
-        Conference.websql.selectQuery(webSQLQuery, function(results) {
+        Conference.WebSQL.selectQuery(webSQLQuery, function(results) {
 
           if (typeof resultsCallback === "function") {
             resultsCallback(results);
@@ -193,7 +198,7 @@ Conference.dataContext = (function ($) {
 
       if (useIndexedDB) {
 
-        Conference.indexedDB.selectQuery(indexedDBQuery, function(results) {
+        Conference.IndexedDB.selectQuery(indexedDBQuery, function(results) {
 
           if (typeof processorFuncCallback === "function") {
             processorFuncCallback(results);
@@ -204,7 +209,7 @@ Conference.dataContext = (function ($) {
 
       } else {
 
-        Conference.websql.selectQuery(webSQLQuery, function(results) {
+        Conference.WebSQL.selectQuery(webSQLQuery, function(results) {
 
           if (typeof processorFuncCallback === "function") {
             processorFuncCallback(results);
