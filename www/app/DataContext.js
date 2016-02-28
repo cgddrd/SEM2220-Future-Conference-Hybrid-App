@@ -4,7 +4,6 @@ Conference.dataContext = (function ($) {
 
     "use strict";
 
-
     // CG - This flag indicates whether we should be using the IndexedDB or WebSQL mechanism for local database storage.
     var useIndexedDB = false;
 
@@ -25,6 +24,9 @@ Conference.dataContext = (function ($) {
 
     var init = function () {
 
+
+        // CG - These objects represent the database schemea using JSON notation.
+        // These would require further refining given extra time.
         var indexedDBSchema = {
           'sessions': {
             'key': '_id',

@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget id="uk.ac.aber.dcs.clg11.conference" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:gap="http://phonegap.com/ns/1.0">
+
     <name>FoWC 2016</name>
     <description>
         SEM2220 - RWD Technical Assignment 2016
@@ -12,14 +13,20 @@
         <application android:debuggable="true" />
     </gap:config-file>
 
-    <!-- <gap:config-file parent="/manifest/application" platform="android">
+    <!--
+
+    CG - Once upon a time these were being used to try and authenticate the native GM SDKs with Google servers, but it wouldn't work.
+
+    <gap:config-file parent="/manifest/application" platform="android">
       <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyCZAE4ivS6WPvUUb95P_nUu7QGSE-jJ1Q0"/>
     </gap:config-file>
 
     <gap:plugin name="cordova-plugin-googlemaps" source="npm">
      <param name="API_KEY_FOR_ANDROID" value="AIzaSyCZAE4ivS6WPvUUb95P_nUu7QGSE-jJ1Q0" />
      <param name="API_KEY_FOR_IOS" value="123" />
-   </gap:plugin> -->
+   </gap:plugin>
+
+  -->
 
     <content src="index.html" />
 
@@ -75,18 +82,6 @@
     <allow-intent href="sms:*" />
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
-
-    <!-- <allow-navigation href="*" />
-    <allow-intent href="*" />
-    <access origin="*" /> -->
-
-    <!-- <access origin="https://googleapis.com" subdomains="true"/>
-    <access origin="http://google.com" subdomains="true"/>
-    <access origin="http://gstatic.com" subdomains="true"/>
-    <access origin="https://google.com" subdomains="true"/>
-    <access origin="https://gstatic.com" subdomains="true"/>
-    <access origin="*.google.com"/>
-    <access origin="*.googleapis.com"/> -->
 
     <platform name="android">
         <allow-intent href="market:*" />

@@ -1,5 +1,9 @@
 var Conference = Conference || {};
 
+/*
+ * CG - Portions of this code are inspired from an original tutorial by FT Labs.
+ * See: http://labs.ft.com/2012/09/ft-style-web-app-on-firefox-and-ie6-to-ie10/ for more information.
+ */
 Conference.WebSQL = (function($) {
 
   var db = null,
